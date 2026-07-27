@@ -144,7 +144,7 @@
   可<b>拍照转文字</b>、可<b>整本 PDF 自动按章节拆分</b>。答题时勾选对应资料，AI 就会<b>严格依据这些资料</b>讲解、出题。
 </div>
 
-<footer>v2026-07-27b · 本助手生成提问 + 直接调用大模型 · 资料仅存本机 · 可「添加到主屏幕」当 App 用</footer>
+<footer>v2026-07-27c · 本助手生成提问 + 直接调用大模型 · 资料仅存本机 · 可「添加到主屏幕」当 App 用</footer>
 
 <!-- 功能弹层 -->
 <div class="mask" id="mask">
@@ -210,6 +210,9 @@
           <button class="mini" onclick="document.getElementById('mat-pdf').click()">📑 整本 PDF 按章节拆分</button>
           <input id="mat-pdf" type="file" accept=".pdf" style="display:none">
           <span id="pdf-status" class="statusline"></span>
+          <br>
+          <button class="mini" id="ai-format-btn" onclick="aiFormatMat()">✨ AI 整理资料格式</button>
+          <span id="ai-status" class="statusline"></span>
         </div>
         <div class="btns" style="margin-top:10px"><button class="btn" onclick="addMat()">保存到资料库</button></div>
         <p class="filein" style="margin-top:8px">提示：📷 适合拍一页教材/笔记直接变文字；📑 适合整本电子课本，自动按「第X章/节/单元」切成多条资料。扫描版（纯图片）PDF 无法自动提取，请改用拍照识别或手动粘贴。</p>
@@ -483,6 +486,37 @@ async function doOCR(file){
   }catch(err){
     st.textContent='⚠️ 识别失败：'+err.message;
   }
+}
+
+// ===== 功能D2：AI 整理资料格式（英语提取单词表 / 其他科整理要点）=====
+async function aiFormatMat(){
+  if(!API_KEY){ openSettings(); return; }
+  const src=document.getElementById('mat-content').value.trim();
+  if(!src){ showToast('请先粘贴或导入资料内容，再点整理'); return; }
+  const btn=document.getElementById('ai-format-btn');
+  const st=document.getElementById('ai-status');
+  btn.disabled=true; st.textContent='AI 整理中…';
+  let prompt;
+  if(curSub==='english'){
+    prompt='你是一位英语助教。请从下面的学习资料中提取所有单词/短语及其释义，整理成规范的单词表。\n要求：\n1. 每行一个，格式严格为「英文 中文」（英文和中文之间只用一个空格，不要冒号、标点或编号）\n2. 英文在前，中文释义在后\n3. 去掉例句、解释性段落和无关文字，只保留词对\n4. 只输出单词表本身，不要任何前缀、说明或编号\n\n资料：\n'+src;
+  }else{
+    const s=SUBJECTS[curSub].label;
+    prompt='你是一位七年级'+s+'助教。请将下面的学习资料整理为清晰、规范的笔记：保留关键知识点、删除无关内容、按逻辑分点，尽量保留原文术语与定义。直接输出整理后的资料，不要加前言或总结性套话。\n\n资料：\n'+src;
+  }
+  try{
+    const res=await fetch('https://api.deepseek.com/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+API_KEY},
+      body:JSON.stringify({model:MODEL,messages:[{role:'user',content:prompt}],stream:false,temperature:0.2})
+    });
+    if(!res.ok){ let m='整理失败（'+res.status+'）'; try{const e=await res.json();if(e&&e.error&&e.error.message)m=e.error.message;}catch(_){} throw new Error(m); }
+    const data=await res.json();
+    const ans=(data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'';
+    document.getElementById('mat-content').value=ans.trim();
+    st.textContent='✓ 已整理，确认无误后点「保存到资料库」';
+  }catch(err){
+    st.textContent='⚠️ '+err.message+'（也可手动整理后保存）';
+  }finally{ btn.disabled=false; }
 }
 
 // ===== 功能C：拍照识题直接问（OCR + 直接出题）=====
