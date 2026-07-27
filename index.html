@@ -91,9 +91,15 @@
   .mat-del{background:#fef2f2;color:#b91c1c;border:none;border-radius:8px;padding:6px 10px;font-size:12px;}
   .chk{display:flex;align-items:center;gap:8px;font-size:13.5px;padding:6px 2px;}
   .chk input{width:18px;height:18px;}
-  .filein{font-size:12px;color:var(--sub);margin-top:6px;}
+  .filein{font-size:12px;color:var(--sub);margin-top:6px;line-height:1.9;}
+  .filein input[type=file]{font-size:12px;}
+  .mini{display:inline-block;background:#eef3ff;color:var(--brand);border:none;
+    border-radius:9px;padding:7px 11px;font-size:12.5px;font-weight:700;margin-top:4px;}
+  .mini:active{opacity:.85;}
+  .mini:disabled{opacity:.5;}
   footer{text-align:center;color:var(--sub);font-size:11.5px;padding:10px 0 26px;}
   .addtip{font-size:11.5px;color:var(--sub);text-align:center;margin:6px 0 0;}
+  .statusline{font-size:12px;color:var(--brand);margin-top:4px;}
 </style>
 </head>
 <body>
@@ -119,8 +125,8 @@
 </div>
 
 <div class="hint">
-  💡 <b>用法：</b>先点右上角 <b>⚙️</b> 填 DeepSeek Key（仅一次）。点 <b>📚</b> 把教材/笔记导入「资料库」，
-  答题时勾选对应资料，AI 就会<b>严格依据这些资料</b>讲解、出题。没资料也能用，只是偏通用。
+  💡 <b>用法：</b>先点右上角 <b>⚙️</b> 填 DeepSeek Key（仅一次）。点 <b>📚</b> 把教材/笔记导入「资料库」——
+  可<b>拍照转文字</b>、可<b>整本 PDF 自动按章节拆分</b>。答题时勾选对应资料，AI 就会<b>严格依据这些资料</b>讲解、出题。
 </div>
 
 <footer>本助手生成提问 + 直接调用大模型 · 资料仅存本机 · 可「添加到主屏幕」当 App 用</footer>
@@ -176,13 +182,25 @@
       <h3>📚 资料库</h3>
       <p class="sub">导入教材章节 / 复习提纲 / 课堂笔记。仅存本机，答题时可勾选作为依据。</p>
       <div id="mat-list"></div>
+
       <div class="field" style="margin-top:14px;border-top:1px dashed var(--line);padding-top:12px">
         <label>添加资料</label>
         <input id="mat-title" placeholder="标题，如：七下数学-二元一次方程组">
         <textarea id="mat-content" placeholder="把教材内容或笔记粘贴到这里（建议控制在一章/一节）" style="margin-top:8px"></textarea>
-        <div class="filein">或从文件导入（.txt / .md）：<input id="mat-file" type="file" accept=".txt,.md"></div>
+        <div class="filein">
+          从文件导入（.txt / .md）：<input id="mat-file" type="file" accept=".txt,.md"><br>
+          <button class="mini" onclick="document.getElementById('ocr-img').click()">📷 拍照 / 选图转文字</button>
+          <input id="ocr-img" type="file" accept="image/*" capture="environment" style="display:none">
+          <span id="ocr-status" class="statusline"></span><br>
+          <button class="mini" onclick="document.getElementById('mat-pdf').click()">📑 整本 PDF 按章节拆分</button>
+          <input id="mat-pdf" type="file" accept=".pdf" style="display:none">
+          <span id="pdf-status" class="statusline"></span>
+        </div>
         <div class="btns" style="margin-top:10px"><button class="btn" onclick="addMat()">保存到资料库</button></div>
+        <p class="filein" style="margin-top:8px">提示：📷 适合拍一页教材/笔记直接变文字；📑 适合整本电子课本，自动按「第X章/节/单元」切成多条资料。扫描版（纯图片）PDF 无法自动提取，请改用拍照识别或手动粘贴。</p>
       </div>
+
+      <div id="pdf-preview" style="display:none;border-top:1px dashed var(--line);padding-top:12px"></div>
     </div>
   </div>
 </div>
@@ -208,6 +226,7 @@ let API_KEY=localStorage.getItem('ds_key')||'';
 let MODEL=localStorage.getItem('ds_model')||'deepseek-chat';
 let MATERIALS=JSON.parse(localStorage.getItem('materials')||'[]');
 let selMatIds=new Set();
+let pendingChapters=[];
 
 // render subjects
 const subsEl=document.getElementById('subs');
@@ -361,7 +380,7 @@ function renderMatList(){
 }
 function delMat(id){
   MATERIALS=MATERIALS.filter(m=>m.id!==id);
-  localStorage.setItem('materials',JSON.stringify(MATERIALS));
+  saveMaterials();
   selMatIds.delete(id); renderMatList();
 }
 function addMat(){
@@ -379,13 +398,126 @@ function addMat(){
 function saveMat(t,c){
   if(!c||!c.trim()){ return; }
   MATERIALS.push({id:'m'+Date.now(), title:t||('资料'+(MATERIALS.length+1)), content:c});
-  localStorage.setItem('materials',JSON.stringify(MATERIALS));
+  saveMaterials();
   document.getElementById('mat-title').value='';
   document.getElementById('mat-content').value='';
   document.getElementById('mat-file').value='';
   renderMatList(); showToast();
 }
+function saveMaterials(){
+  try{
+    localStorage.setItem('materials',JSON.stringify(MATERIALS));
+  }catch(e){
+    showStatus('pdf-status','⚠️ 资料太多/太大，本机存储已满，请删掉部分再保存');
+  }
+}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ===== 工具：按需加载第三方脚本 =====
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src=src; s.onload=()=>res(); s.onerror=()=>rej(new Error('脚本加载失败：'+src));
+    document.head.appendChild(s);
+  });
+}
+
+// ===== 功能A：拍照转文字（Tesseract.js OCR，中文）=====
+document.getElementById('ocr-img').addEventListener('change',e=>{
+  const file=e.target.files[0];
+  if(file) doOCR(file);
+  e.target.value='';
+});
+async function doOCR(file){
+  const st=document.getElementById('ocr-status');
+  try{
+    st.textContent='加载识别引擎…';
+    if(!window.Tesseract){
+      await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+    }
+    st.textContent='识别中（首次较慢，请稍候）…';
+    const {data:{text}}=await Tesseract.recognize(file,'chi_sim',{
+      logger:m=>{ if(m.status==='recognizing text') st.textContent='识别中 '+Math.round(m.progress*100)+'%'; }
+    });
+    const ta=document.getElementById('mat-content');
+    ta.value=(ta.value?ta.value+'\n\n':'')+text.trim();
+    st.textContent='识别完成 ✓ 已填入内容框，可再编辑后保存';
+  }catch(err){
+    st.textContent='⚠️ 识别失败：'+err.message;
+  }
+}
+
+// ===== 功能B：整本 PDF 按章节自动拆分（pdf.js）=====
+document.getElementById('mat-pdf').addEventListener('change',e=>{
+  const file=e.target.files[0];
+  if(file) doPDF(file);
+  e.target.value='';
+});
+async function doPDF(file){
+  const st=document.getElementById('pdf-status');
+  try{
+    st.textContent='加载 PDF 解析器…';
+    if(!window.pdfjsLib){
+      await loadScript('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js');
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+    }
+    st.textContent='解析中（大文件请稍候）…';
+    const buf=await file.arrayBuffer();
+    const pdf=await window.pdfjsLib.getDocument({data:buf}).promise;
+    let full='';
+    for(let i=1;i<=pdf.numPages;i++){
+      st.textContent='读取第 '+i+' / '+pdf.numPages+' 页…';
+      const page=await pdf.getPage(i);
+      const tc=await page.getTextContent();
+      full+='\n'+tc.items.map(it=>it.str).join('');
+    }
+    const chapters=splitByChapters(full);
+    st.textContent='识别到 '+chapters.length+' 段，请勾选要保存的：';
+    renderPDFPreview(chapters);
+  }catch(err){
+    st.textContent='⚠️ PDF 解析失败：'+err.message+'（扫描版图片 PDF 无法提取，请改用拍照识别）';
+  }
+}
+function splitByChapters(text){
+  const re=/第[一二三四五六七八九十百千零两0-9]+[章节单元]/g;
+  const matches=[...text.matchAll(re)];
+  if(!matches.length){
+    return [{title:document.getElementById('mat-title').value.trim()||'整本教材', content:text.trim()}];
+  }
+  const segs=[];
+  for(let i=0;i<matches.length;i++){
+    const start=matches[i].index;
+    const end=(i+1<matches.length)?matches[i+1].index:text.length;
+    const head=matches[i][0];
+    // 取标题后不超过 40 字作为名称（去掉换行）
+    const after=text.slice(start+head.length, start+head.length+40).replace(/\s+/g,' ').trim();
+    const title=(head+(after?'：'+after:'')).slice(0,46);
+    segs.push({title:title, content:text.slice(start,end).trim()});
+  }
+  return segs;
+}
+function renderPDFPreview(chapters){
+  pendingChapters=chapters;
+  const box=document.getElementById('pdf-preview');
+  box.style.display='block';
+  box.innerHTML='<div class="sec-t" style="margin-top:0">📑 检测到以下章节，勾选后保存为多条资料：</div>'+
+    chapters.map((c,i)=>`<label class="chk"><input type="checkbox" checked data-i="${i}"> <b>${esc(c.title)}</b> <span style="color:var(--sub)">（${c.content.length} 字）</span></label>`).join('')+
+    '<div class="btns" style="margin-top:10px"><button class="btn" onclick="saveSelectedChapters()">保存所选章节</button></div>';
+}
+function saveSelectedChapters(){
+  const boxes=document.querySelectorAll('#pdf-preview input[type=checkbox]');
+  let n=0;
+  boxes.forEach(b=>{
+    if(b.checked){
+      const c=pendingChapters[+b.dataset.i];
+      MATERIALS.push({id:'m'+Date.now()+'_'+n, title:c.title, content:c.content});
+      n++;
+    }
+  });
+  if(n){ saveMaterials(); renderMatList(); }
+  document.getElementById('pdf-preview').style.display='none';
+  document.getElementById('pdf-status').textContent='已保存 '+n+' 个章节 ✓';
+}
 
 // 复制
 function copyPrompt(){ copyText(finalPrompt()); }
