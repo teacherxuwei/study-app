@@ -150,7 +150,7 @@
   可<b>拍照转文字</b>、可<b>整本 PDF 自动按章节拆分</b>。答题时勾选对应资料，AI 就会<b>严格依据这些资料</b>讲解、出题。
 </div>
 
-<footer>v2026-07-27d · 本助手生成提问 + 直接调用大模型 · 资料仅存本机 · 可「添加到主屏幕」当 App 用</footer>
+<footer>v2026-07-27e · 本助手生成提问 + 直接调用大模型 · 资料仅存本机 · 可「添加到主屏幕」当 App 用</footer>
 
 <!-- 功能弹层 -->
 <div class="mask" id="mask">
@@ -724,24 +724,43 @@ function openPoem(){
   document.getElementById('mask-poem').classList.add('show');
 }
 function closePoem(){ document.getElementById('mask-poem').classList.remove('show'); }
+function isExplainLine(l){
+  if(/^[【\[]/.test(l)) return true;
+  if(/^(译文|赏析|注释|注解|题解|作者|创作背景|写作背景|大意|解读|背景|中心思想|主旨|白话译文)[:：]/.test(l)) return true;
+  return false;
+}
 function parsePoems(text){
   const blocks=text.split(/\n\s*\n/).map(b=>b.trim()).filter(b=>b);
-  const poems=[];
+  const raw=[];
   blocks.forEach(b=>{
     const lines=b.split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
     if(!lines.length) return;
-    let title='', body='';
-    if(lines.length===1){
-      const m=lines[0].match(/^[《「『](.+?)[》」』]\s*(.*)$/);
-      if(m){ title=m[1]; body=m[2]; }
-      else { body=lines[0]; }
-    }else{
-      title=lines[0].replace(/^[《「『]/,'').replace(/[》」』]$/,'');
-      body=lines.slice(1).join('\n');
+    let title='', bodyLines=[], explainLines=[], inExp=false;
+    const m0=lines[0].match(/^[《「『](.+?)[》」』]\s*(.*)$/);
+    if(m0){ title=m0[1]; if(m0[2]) bodyLines.push(m0[2]); }
+    else { title=lines[0]; }
+    for(let i=1;i<lines.length;i++){
+      const l=lines[i];
+      if(!inExp && isExplainLine(l)) inExp=true;
+      if(inExp) explainLines.push(l); else bodyLines.push(l);
     }
-    poems.push({title:title, body:body});
+    raw.push({title:title, body:bodyLines.join('\n'), explain:explainLines.join('\n')});
   });
-  return poems;
+  // 把“纯说明块”（如单独一段【赏析】…）合并到上一首诗
+  const out=[];
+  raw.forEach(po=>{
+    const firstBodyLine=(po.body.split('\n')[0]||'');
+    const markerOnly=isExplainLine(po.title)||isExplainLine(firstBodyLine);
+    const noVerse=!po.body.replace(firstBodyLine,'').trim();
+    if(markerOnly && noVerse && out.length){
+      const prev=out[out.length-1];
+      const add=(po.title||'')+(po.body?'\n'+po.body:'');
+      prev.explain=(prev.explain?prev.explain+'\n':'')+add;
+      return;
+    }
+    out.push(po);
+  });
+  return out;
 }
 function startPoem(){
   const sel=[...document.querySelectorAll('.pmat:checked')].map(c=>c.value);
@@ -760,9 +779,13 @@ function renderPoem(){
   const bodyHtml = poemHidden
     ? '<div class="ans" style="text-align:center;color:var(--sub)">（诗文已隐藏，点「显示诗文」自查）</div>'
     : '<div class="ans" style="text-align:center;font-size:18px;line-height:2.1;white-space:pre-wrap">'+esc(p.body)+'</div>';
+  const explainHtml = p.explain
+    ? '<div style="margin-top:12px;padding:12px;background:#faf5ff;border:1px solid #ede9fe;border-radius:12px"><div style="font-size:12px;color:#a855f7;font-weight:700;margin-bottom:4px">📖 说明</div><div style="font-size:14px;line-height:1.8;white-space:pre-wrap">'+esc(p.explain)+'</div></div>'
+    : '';
   box.innerHTML=`<div class="loading" style="text-align:center;font-size:13px">第 ${poemIdx+1} / ${poemList.length} 首</div>
     <div style="text-align:center;font-size:22px;font-weight:800;margin:6px 0 10px">${esc(p.title)||'（无题）'}</div>
     ${bodyHtml}
+    ${explainHtml}
     <div class="btns"><button class="btn ghost" onclick="togglePoemHide()">${poemHidden?'显示诗文 👁':'隐藏诗文 🙈'}</button></div>
     <div class="btns">
       <button class="btn" style="background:#94a3b8" onclick="prevPoem()">◀ 上一首</button>
