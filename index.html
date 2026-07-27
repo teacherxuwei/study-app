@@ -16,10 +16,12 @@
   body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
     background:var(--bg);color:var(--ink);line-height:1.6;
     max-width:480px;margin:0 auto;min-height:100vh;}
-  .top{background:linear-gradient(135deg,#3b6ef0,#16b8a6);color:#fff;
+  .top{position:relative;background:linear-gradient(135deg,#3b6ef0,#16b8a6);color:#fff;
     padding:18px 18px 16px;border-radius:0 0 20px 20px;}
   .top h1{margin:0;font-size:20px;font-weight:800;}
   .top p{margin:4px 0 0;font-size:12.5px;opacity:.92;}
+  .gear{position:absolute;top:14px;right:14px;font-size:18px;background:rgba(255,255,255,.22);
+    border:none;color:#fff;width:38px;height:38px;border-radius:50%;}
   .sec{margin:16px 14px;}
   .sec-t{font-size:13px;color:var(--sub);font-weight:700;margin:0 2px 8px;}
   .subjects{display:flex;gap:8px;overflow-x:auto;padding:2px;scrollbar-width:none;}
@@ -52,10 +54,10 @@
   .sheet .sub{font-size:12px;color:var(--sub);margin:0 0 14px;}
   .field{margin:12px 0;}
   .field label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;}
-  .field input,.field textarea{width:100%;border:1.5px solid var(--line);
-    border-radius:12px;padding:11px;font-size:14px;font-family:inherit;resize:vertical;}
+  .field input,.field textarea,.field select{width:100%;border:1.5px solid var(--line);
+    border-radius:12px;padding:11px;font-size:14px;font-family:inherit;background:#fff;resize:vertical;}
   .field textarea{min-height:84px;}
-  .field input:focus,.field textarea:focus{outline:none;border-color:var(--brand);}
+  .field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--brand);}
   .pbox{background:#0f172a;color:#e2e8f0;border-radius:12px;padding:13px;
     font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;margin:8px 0 12px;}
   .btns{display:flex;gap:10px;margin-top:6px;}
@@ -63,12 +65,25 @@
     font-weight:700;color:#fff;background:var(--brand);}
   .btn.ghost{background:#eef3ff;color:var(--brand);}
   .btn:active{opacity:.85;}
+  .btn:disabled{opacity:.6;}
   .close{position:absolute;top:14px;right:16px;font-size:22px;color:var(--sub);background:none;border:none;}
   .sheet-wrap{position:relative;}
   .toast{position:fixed;left:50%;top:42%;transform:translateX(-50%);
     background:rgba(15,23,42,.9);color:#fff;padding:10px 18px;border-radius:24px;
     font-size:14px;z-index:50;opacity:0;transition:.2s;pointer-events:none;}
   .toast.show{opacity:1;}
+  .ansbox{margin:10px 0 2px;}
+  .ans{background:#f1f5fb;border:1px solid var(--line);border-radius:12px;padding:14px;
+    font-size:14px;line-height:1.7;white-space:pre-wrap;word-break:break-word;
+    max-height:52vh;overflow-y:auto;}
+  .ans code{background:#e2e8f0;padding:1px 5px;border-radius:4px;font-size:12.5px;}
+  .loading{color:var(--sub);font-size:13.5px;padding:10px 2px;}
+  .loading::after{content:'';display:inline-block;width:12px;height:12px;margin-left:6px;
+    border:2px solid var(--brand);border-top-color:transparent;border-radius:50%;
+    animation:spin .7s linear infinite;vertical-align:-1px;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:12px;
+    padding:12px;font-size:13px;line-height:1.6;}
   footer{text-align:center;color:var(--sub);font-size:11.5px;padding:10px 0 26px;}
   .addtip{font-size:11.5px;color:var(--sub);text-align:center;margin:6px 0 0;}
 </style>
@@ -76,8 +91,9 @@
 <body>
 
 <div class="top">
+  <button class="gear" onclick="openSettings()">⚙️</button>
   <h1>📚 七年级学习小助手</h1>
-  <p>点科目 → 点功能 → 一键复制，去 WorkBuddy 提问（不用再打字）</p>
+  <p>点科目 → 点功能 → 直接提问，AI 答案当场显示（也可复制去 WorkBuddy）</p>
 </div>
 
 <div class="sec">
@@ -92,13 +108,13 @@
 </div>
 
 <div class="hint">
-  💡 <b>用法：</b>选好科目和功能后，按提示填一下（可留空），点「复制提示词」，
-  再打开 WorkBuddy 粘贴发送即可。想每天自动刷题？选「每日复习」复制指令发给 WorkBuddy。
+  💡 <b>用法：</b>先点右上角 ⚙️ 填入 DeepSeek API Key（仅一次）。之后选科目+功能，
+  点「直接提问 ▶」即可当场得到 AI 讲解/练习/画图描述。没有 Key 也能用「复制提示词」去 WorkBuddy 提问。
 </div>
 
-<footer>本助手帮你生成提问 · 实际讲解由 WorkBuddy 完成 · 可「添加到主屏幕」当 App 用</footer>
+<footer>本助手帮你生成提问 · 填 Key 后可直接调用大模型出答案 · 可「添加到主屏幕」当 App 用</footer>
 
-<!-- modal -->
+<!-- 功能弹层 -->
 <div class="mask" id="mask">
   <div class="sheet">
     <div class="sheet-wrap">
@@ -107,13 +123,39 @@
       <p class="sub" id="m-s"></p>
       <div id="m-fields"></div>
       <div class="pbox" id="m-prompt"></div>
+      <div class="btns"><button class="btn" id="ask-btn" onclick="askAI()">直接提问 ▶</button></div>
       <div class="btns">
+        <button class="btn ghost" onclick="copyPrompt()">复制提示词</button>
         <button class="btn ghost" onclick="closeSheet()">返回</button>
-        <button class="btn" onclick="copyPrompt()">复制提示词</button>
+      </div>
+      <div class="ansbox" id="m-answer" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 设置弹层 -->
+<div class="mask" id="mask-set">
+  <div class="sheet">
+    <div class="sheet-wrap">
+      <button class="close" onclick="closeSettings()">×</button>
+      <h3>⚙️ 设置</h3>
+      <p class="sub">填入 DeepSeek API Key，之后点功能即可直接出 AI 答案</p>
+      <div class="field"><label>DeepSeek API Key</label>
+        <input id="s-key" type="password" placeholder="sk-..."></div>
+      <div class="field"><label>模型</label>
+        <select id="s-model">
+          <option value="deepseek-chat">deepseek-chat（快·推荐）</option>
+          <option value="deepseek-reasoner">deepseek-reasoner（慢·会推理）</option>
+        </select></div>
+      <p class="sub" style="margin-top:0">Key 仅保存在本机浏览器，只发给 DeepSeek 用于答题，不会上传到其他地方。</p>
+      <div class="btns">
+        <button class="btn ghost" onclick="closeSettings()">取消</button>
+        <button class="btn" onclick="saveSettings()">保存</button>
       </div>
     </div>
   </div>
 </div>
+
 <div class="toast" id="toast">已复制 ✓</div>
 
 <script>
@@ -131,6 +173,8 @@ const TASKS = [
   {id:'auto',ic:'⏰',t:'每日复习',d:'设自动刷题',needAuto:true}
 ];
 let curSub='math', curTask=null, curData={};
+let API_KEY=localStorage.getItem('ds_key')||'';
+let MODEL=localStorage.getItem('ds_model')||'deepseek-chat';
 
 // render subjects
 const subsEl=document.getElementById('subs');
@@ -182,6 +226,9 @@ function openSheet(t){
       <input id="i-when" value="每天晚上 8 点"></div>`;
     bind('i-when','when');
   }
+  const ab=document.getElementById('m-answer');
+  ab.style.display='none'; ab.innerHTML='';
+  document.getElementById('ask-btn').disabled=false;
   render();
   document.getElementById('mask').classList.add('show');
 }
@@ -199,31 +246,31 @@ function build(){
   const count=curData.count||5;
   const t=curTask.id;
   if(t==='explain'){
-    if(curSub==='math') return `请一步步推导这道七年级数学题，并在每一步标出「学生最容易错的地方」：\n${text}`;
-    if(curSub==='chinese') return `请逐句翻译这段文言文，并列出每个重点字词的意思和用法：\n${text}`;
-    if(curSub==='english') return `请用七年级学过的语法，解释这个句子为什么用这个时态，并给出类似例句：\n${text}`;
-    return `请讲解七年级${s}的「${topic}」，用初中生能懂的语言，分点说明并举例。`;
+    if(curSub==='math') return `你是一位七年级数学辅导老师。请一步步推导这道七年级数学题，并在每一步标出「学生最容易错的地方」：\n${text}`;
+    if(curSub==='chinese') return `你是一位七年级语文老师。请逐句翻译这段文言文，并列出每个重点字词的意思和用法：\n${text}`;
+    if(curSub==='english') return `你是一位七年级英语老师。请用七年级学过的语法，解释这个句子为什么用这个时态，并给出类似例句：\n${text}`;
+    return `你是一位七年级${s}老师。请讲解「${topic}」，用初中生能懂的语言，分点说明并举例。`;
   }
   if(t==='practice'){
-    if(curSub==='math') return `出 ${count} 道七年级数学「${topic}」易错题，难度中等偏上，每道附：正确答案 + 分步解析 + 这道题的陷阱提示。`;
-    if(curSub==='english') return `出 ${count} 道七年级英语「${topic}」练习题，附答案和易混点说明。`;
-    if(curSub==='chinese') return `出 ${count} 道七年级语文「${topic}」练习题（如阅读理解/病句/文言），附答案和解析。`;
-    return `出 ${count} 道七年级${s}「${topic}」填空题/选择题，附答案，并标注对应课本章节。`;
+    if(curSub==='math') return `你是七年级数学老师。出 ${count} 道七年级数学「${topic}」易错题，难度中等偏上，每道附：正确答案 + 分步解析 + 这道题的陷阱提示。`;
+    if(curSub==='english') return `你是七年级英语老师。出 ${count} 道七年级英语「${topic}」练习题，附答案和易混点说明。`;
+    if(curSub==='chinese') return `你是七年级语文老师。出 ${count} 道七年级语文「${topic}」练习题（如阅读理解/病句/文言），附答案和解析。`;
+    return `你是七年级${s}老师。出 ${count} 道七年级${s}「${topic}」填空题/选择题，附答案，并标注对应课本章节。`;
   }
   if(t==='visual'){
-    if(curSub==='bio') return `画一张七年级生物「${topic}」结构示意图，标注主要部分，并在关键处留填空框。`;
-    if(curSub==='geo') return `画一张七年级地理「${topic}」简图/地图，标注关键位置，并留出名称填空框。`;
-    if(curSub==='history') return `画一条七年级历史「${topic}」时间轴，标出起止年和标志性事件，用颜色区分不同时期。`;
-    if(curSub==='math') return `画一张七年级数学「${topic}」示意图（如函数图像/几何辅助线），帮助理解。`;
-    if(curSub==='chinese') return `画一张七年级语文「${topic}」思维导图/文章结构图，帮助记忆。`;
-    return `画一张七年级${s}「${topic}」知识卡片图，结构清晰、便于背诵。`;
+    if(curSub==='bio') return `你是七年级生物老师。请画一张「${topic}」结构示意图的文字描述（用 ASCII / 括号标注主要部分），并在关键处留填空，便于学生默写。`;
+    if(curSub==='geo') return `你是七年级地理老师。请画一张「${topic}」地图/简图的文字描述（标注关键位置），并留出名称填空，便于学生记忆。`;
+    if(curSub==='history') return `你是七年级历史老师。请画一条「${topic}」时间轴的文字描述，标出起止年和标志性事件，用不同符号区分不同时期。`;
+    if(curSub==='math') return `你是七年级数学老师。请用文字描述一张「${topic}」示意图（如函数图像/几何辅助线），帮助学生理解。`;
+    if(curSub==='chinese') return `你是七年级语文老师。请画一张「${topic}」思维导图/文章结构图的文字描述，帮助学生记忆。`;
+    return `你是七年级${s}老师。请画一张「${topic}」知识卡片图的文字描述，结构清晰、便于背诵。`;
   }
   if(t==='writing'){
-    if(curSub==='english') return `润色这篇七年级英语作文，保留原意、升级词汇和句式，并用括号逐条标注改动的语法点（时态/单三/冠词等）：\n${text}`;
-    return `这是我写的七年级${s}作文，请：①指出 3 个最该改的地方；②给出升格后的段落示范；③给我一个好开头/好结尾模板。\n${text}`;
+    if(curSub==='english') return `你是七年级英语老师。请润色这篇七年级英语作文，保留原意、升级词汇和句式，并用括号逐条标注改动的语法点（时态/单三/冠词等）：\n${text}`;
+    return `你是七年级${s}老师。这是我写的七年级${s}作文，请：①指出 3 个最该改的地方；②给出升格后的段落示范；③给我一个好开头/好结尾模板。\n${text}`;
   }
   if(t==='plan'){
-    return `帮我制定一份本周七年级复习计划：\n- 科目：${s}（弱项）\n- 每天可用：${curData.time||'平日40分钟，周末2小时'}\n- 输出：按周一到周日排列的清单，每天标注科目、具体任务、预计时长，并留出打勾框。`;
+    return `你是学习规划师。帮我制定一份本周七年级复习计划：\n- 科目：${s}（弱项）\n- 每天可用：${curData.time||'平日40分钟，周末2小时'}\n- 输出：按周一到周日排列的清单，每天标注科目、具体任务、预计时长，并留出打勾框。`;
   }
   if(t==='auto'){
     return `请帮我设置定时任务：${curData.when||'每天晚上 8 点'}，给我推送一道七年级${s}易错题，附答案和解析。`;
@@ -231,18 +278,79 @@ function build(){
   return '';
 }
 function render(){document.getElementById('m-prompt').textContent=build();}
+
+// 设置
+function openSettings(){
+  document.getElementById('s-key').value=API_KEY;
+  document.getElementById('s-model').value=MODEL;
+  document.getElementById('mask-set').classList.add('show');
+}
+function closeSettings(){document.getElementById('mask-set').classList.remove('show');}
+function saveSettings(){
+  API_KEY=document.getElementById('s-key').value.trim();
+  MODEL=document.getElementById('s-model').value;
+  localStorage.setItem('ds_key',API_KEY);
+  localStorage.setItem('ds_model',MODEL);
+  closeSettings();showToast();
+}
+
+// 复制提示词
 function copyPrompt(){
   const txt=build();
+  copyText(txt);
+}
+// 复制回答
+function copyAns(){
+  const el=document.querySelector('#m-answer .ans');
+  if(!el)return;
+  copyText(el.innerText);
+}
+function copyText(txt){
   navigator.clipboard.writeText(txt).then(showToast).catch(()=>{
     const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);
     ta.select();document.execCommand('copy');ta.remove();showToast();
   });
+}
+
+// 直接调用 DeepSeek
+async function askAI(){
+  if(!API_KEY){openSettings();return;}
+  const prompt=build();
+  const box=document.getElementById('m-answer');
+  box.style.display='block';
+  box.innerHTML='<div class="loading">AI 正在解答…</div>';
+  const btn=document.getElementById('ask-btn');btn.disabled=true;
+  try{
+    const res=await fetch('https://api.deepseek.com/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+API_KEY},
+      body:JSON.stringify({model:MODEL,messages:[{role:'user',content:prompt}],stream:false,temperature:0.7})
+    });
+    if(!res.ok){
+      let m='请求失败（'+res.status+'）';
+      try{const e=await res.json();if(e&&e.error&&e.error.message)m=e.error.message;}catch(_){}
+      throw new Error(m);
+    }
+    const data=await res.json();
+    const ans=(data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'（无内容）';
+    box.innerHTML='<div class="ans">'+md(ans)+'</div>'+
+      '<div class="btns" style="margin-top:8px"><button class="btn ghost" onclick="copyAns()">复制回答</button></div>';
+  }catch(err){
+    box.innerHTML='<div class="err">⚠️ '+md(err.message)+'<br>请检查 Key 是否正确、账户是否已充值；或改用「复制提示词」去 WorkBuddy 提问。</div>';
+  }finally{btn.disabled=false;}
+}
+function md(s){
+  s=String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  s=s.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+  s=s.replace(/`([^`]+?)`/g,'<code>$1</code>');
+  return s;
 }
 function showToast(){
   const t=document.getElementById('toast');t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),1300);
 }
 document.getElementById('mask').addEventListener('click',e=>{if(e.target.id==='mask')closeSheet();});
+document.getElementById('mask-set').addEventListener('click',e=>{if(e.target.id==='mask-set')closeSettings();});
 </script>
 </body>
 </html>
