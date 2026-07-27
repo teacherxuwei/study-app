@@ -590,8 +590,8 @@ function openVocab(){
   if(!MATERIALS.length){
     mb.innerHTML='<p class="sub">还没有资料。请先在 📚 里添加「单词本」：每行一个，格式 <b>英文 中文</b>（如 <b>apple 苹果</b>）。也可「拍照转文字」拍下单词表自动识别。</p>';
   }else{
-    mb.innerHTML='<div class="field"><label>选择单词本（勾选要测验的资料）</label>'+
-      MATERIALS.map(m=>`<label class="chk"><input type="checkbox" class="vmat" value="${m.id}"> ${esc(m.title)}</label>`).join('')+'</div>';
+    mb.innerHTML='<div class="field"><label>选择单词本（默认全选，可取消不需要的）</label>'+
+      MATERIALS.map(m=>`<label class="chk"><input type="checkbox" class="vmat" value="${m.id}" checked> ${esc(m.title)}</label>`).join('')+'</div>';
   }
   document.getElementById('v-count').value=10;
   document.getElementById('v-mode').value='en2zh';
@@ -695,9 +695,11 @@ function md(s){
   s=s.replace(/`([^`]+?)`/g,'<code>$1</code>');
   return s;
 }
-function showToast(){
-  const t=document.getElementById('toast');t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),1300);
+function showToast(msg){
+  const t=document.getElementById('toast');
+  if(msg!==undefined) t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>{ t.classList.remove('show'); if(msg!==undefined) t.textContent='已复制 ✓'; },1300);
 }
 document.getElementById('mask').addEventListener('click',e=>{if(e.target.id==='mask')closeSheet();});
 document.getElementById('mask-set').addEventListener('click',e=>{if(e.target.id==='mask-set')closeSettings();});
