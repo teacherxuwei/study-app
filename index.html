@@ -124,6 +124,12 @@
   <div class="tasks" id="tasks"></div>
 </div>
 
+<div class="sec">
+  <button class="btn" id="photo-ask-btn" style="width:100%;background:var(--brand2)" onclick="document.getElementById('photo-img').click()">📷 拍照识题（拍一道题，用当前科目直接讲解）</button>
+  <input id="photo-img" type="file" accept="image/*" capture="environment" style="display:none">
+  <p class="addtip">先选好上面科目，再拍题 → 自动识别 → 直接出讲解</p>
+</div>
+
 <div class="hint">
   💡 <b>用法：</b>先点右上角 <b>⚙️</b> 填 DeepSeek Key（仅一次）。点 <b>📚</b> 把教材/笔记导入「资料库」——
   可<b>拍照转文字</b>、可<b>整本 PDF 自动按章节拆分</b>。答题时勾选对应资料，AI 就会<b>严格依据这些资料</b>讲解、出题。
@@ -446,6 +452,35 @@ async function doOCR(file){
     st.textContent='⚠️ 识别失败：'+err.message;
   }
 }
+
+// ===== 功能C：拍照识题直接问（OCR + 直接出题）=====
+document.getElementById('photo-img').addEventListener('change',e=>{
+  const file=e.target.files[0]; e.target.value='';
+  if(!file) return;
+  if(!API_KEY){ openSettings(); return; }
+  const ex=TASKS.find(x=>x.id==='explain');
+  const btn=document.getElementById('photo-ask-btn');
+  btn.disabled=true; btn.textContent='📷 识别题目中…';
+  (async()=>{
+    try{
+      if(!window.Tesseract) await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+      const {data:{text}}=await Tesseract.recognize(file,'chi_sim',{
+        logger:m=>{ if(m.status==='recognizing text'){ btn.textContent='📷 识别中 '+Math.round(m.progress*100)+'%'; } }
+      });
+      const t=text.trim();
+      btn.disabled=false; btn.textContent='📷 拍照识题（拍一道题，用当前科目直接讲解）';
+      if(!t){ showToast('没识别到文字，请重拍或手动粘贴'); return; }
+      curData={}; selMatIds.clear();
+      openSheet(ex);
+      document.getElementById('i-text').value=t;
+      curData.text=t; render();
+      showToast('已识别，点「直接提问 ▶」出讲解');
+    }catch(err){
+      btn.disabled=false; btn.textContent='📷 拍照识题（拍一道题，用当前科目直接讲解）';
+      showToast('拍照识别失败：'+err.message);
+    }
+  })();
+});
 
 // ===== 功能B：整本 PDF 按章节自动拆分（pdf.js）=====
 document.getElementById('mat-pdf').addEventListener('change',e=>{
