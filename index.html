@@ -211,6 +211,28 @@
   </div>
 </div>
 
+<!-- 单词测验弹层 -->
+<div class="mask" id="mask-vocab">
+  <div class="sheet">
+    <div class="sheet-wrap">
+      <button class="close" onclick="closeVocab()">×</button>
+      <h3>🔤 单词测验</h3>
+      <p class="sub">从资料库里的「单词本」抽词自测，纯本地、不耗 API</p>
+      <div id="v-setup">
+        <div id="v-mats"></div>
+        <div class="field"><label>出题数量</label><input id="v-count" type="number" value="10" min="1" max="50"></div>
+        <div class="field"><label>测验方式</label>
+          <select id="v-mode">
+            <option value="en2zh">看英文 → 说中文</option>
+            <option value="zh2en">看中文 → 说英文</option>
+          </select></div>
+        <div class="btns"><button class="btn" onclick="startVocab()">开始测验 ▶</button></div>
+      </div>
+      <div id="v-quiz" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast">已复制 ✓</div>
 
 <script>
@@ -225,7 +247,8 @@ const TASKS = [
   {id:'visual',ic:'🖼️',t:'知识卡片',d:'画图/时间轴',needTopic:true},
   {id:'writing',ic:'✍️',t:'写作升格',d:'作文批改润色',needText:true},
   {id:'plan',ic:'📅',t:'周计划',d:'排复习清单',needWeek:true},
-  {id:'auto',ic:'⏰',t:'每日复习',d:'设自动刷题',needAuto:true}
+  {id:'auto',ic:'⏰',t:'每日复习',d:'设自动刷题',needAuto:true},
+  {id:'vocab',ic:'🔤',t:'单词测验',d:'从资料库抽词',needVocab:true}
 ];
 let curSub='math', curTask=null, curData={};
 let API_KEY=localStorage.getItem('ds_key')||'';
@@ -250,7 +273,7 @@ TASKS.forEach(t=>{
   const d=document.createElement('div');
   d.className='task';
   d.innerHTML=`<span class="ic">${t.ic}</span><span><span class="tl">${t.t}</span><br><span class="td">${t.d}</span></span>`;
-  d.onclick=()=>openSheet(t);
+  d.onclick=()=>{ if(t.id==='vocab') openVocab(); else openSheet(t); };
   tasksEl.appendChild(d);
 });
 
@@ -554,6 +577,72 @@ function saveSelectedChapters(){
   document.getElementById('pdf-status').textContent='已保存 '+n+' 个章节 ✓';
 }
 
+// ===== 功能D：英文单词测验（纯本地，从资料库抽词）=====
+let vocabPool=[], vocabQ=[], vocabIdx=0, vocabMode='en2zh', vocabRight=0, vocabWrong=[];
+function openVocab(){
+  const mb=document.getElementById('v-mats');
+  if(!MATERIALS.length){
+    mb.innerHTML='<p class="sub">还没有资料。请先在 📚 里添加「单词本」：每行一个，格式 <b>英文 中文</b>（如 <b>apple 苹果</b>）。也可「拍照转文字」拍下单词表自动识别。</p>';
+  }else{
+    mb.innerHTML='<div class="field"><label>选择单词本（勾选要测验的资料）</label>'+
+      MATERIALS.map(m=>`<label class="chk"><input type="checkbox" class="vmat" value="${m.id}"> ${esc(m.title)}</label>`).join('')+'</div>';
+  }
+  document.getElementById('v-count').value=10;
+  document.getElementById('v-mode').value='en2zh';
+  document.getElementById('v-quiz').style.display='none';
+  document.getElementById('v-setup').style.display='block';
+  document.getElementById('mask-vocab').classList.add('show');
+}
+function closeVocab(){ document.getElementById('mask-vocab').classList.remove('show'); }
+function parseVocab(text){
+  const pairs=[];
+  text.split(/\r?\n/).forEach(raw=>{
+    const line=raw.trim(); if(!line) return;
+    let m=line.match(/^([A-Za-z][A-Za-z'\-]*)\s*[\-\—:：,，.、]?\s*(.+)$/);
+    if(m){ pairs.push({en:m[1], zh:m[2].trim()}); return; }
+    m=line.match(/^([\u4e00-\u9fff][\u4e00-\u9fff\/·]*)\s*[\-\—:：,，.、]?\s*([A-Za-z][A-Za-z'\-]*)/);
+    if(m){ pairs.push({en:m[2], zh:m[1]}); }
+  });
+  return pairs;
+}
+function startVocab(){
+  const sel=[...document.querySelectorAll('.vmat:checked')].map(c=>c.value);
+  if(!sel.length){ showToast('请先勾选至少一个单词本'); return; }
+  let text=''; MATERIALS.filter(m=>sel.includes(m.id)).forEach(m=>text+='\n'+m.content);
+  vocabPool=parseVocab(text);
+  if(!vocabPool.length){ showToast('没解析到单词，请确认格式为「英文 中文」'); return; }
+  const n=Math.min(parseInt(document.getElementById('v-count').value)||10, vocabPool.length);
+  vocabMode=document.getElementById('v-mode').value;
+  vocabQ=[...vocabPool].sort(()=>Math.random()-0.5).slice(0,n);
+  vocabIdx=0; vocabRight=0; vocabWrong=[];
+  document.getElementById('v-setup').style.display='none';
+  document.getElementById('v-quiz').style.display='block';
+  renderVocab();
+}
+function renderVocab(){
+  const box=document.getElementById('v-quiz');
+  if(vocabIdx>=vocabQ.length){
+    box.innerHTML=`<div class="ans" style="text-align:center"><h3>测验完成 🎉</h3>
+      <p style="font-size:20px;font-weight:800">得分：${vocabRight} / ${vocabQ.length}</p>
+      ${vocabWrong.length? '<p style="color:#b91c1c;font-size:13px">需复习：'+vocabWrong.map(w=>esc(w.en)+' '+esc(w.zh)).join('， ')+'</p>':'<p style="color:#16a34a">全部答对，太棒了！</p>'}
+      <div class="btns"><button class="btn" onclick="startVocab()">再测一次</button><button class="btn ghost" onclick="closeVocab()">完成</button></div></div>`;
+    return;
+  }
+  const w=vocabQ[vocabIdx];
+  const q = vocabMode==='en2zh'? w.en : w.zh;
+  const a = vocabMode==='en2zh'? w.zh : w.en;
+  box.innerHTML=`<div class="loading" style="text-align:center;font-size:13px">第 ${vocabIdx+1} / ${vocabQ.length} 题 · 已答对 ${vocabRight}</div>
+    <div class="ans" style="text-align:center;font-size:26px;font-weight:800;padding:22px 10px">${esc(q)}</div>
+    <div id="v-ans" class="ans" style="display:none;text-align:center;font-size:18px;color:var(--brand);font-weight:700">${esc(a)}</div>
+    <div class="btns"><button class="btn ghost" onclick="showVans()">显示答案</button></div>
+    <div class="btns" id="v-judge" style="display:none">
+      <button class="btn" style="background:#16a34a" onclick="judgeV(true)">认识 ✓</button>
+      <button class="btn" style="background:#dc2626" onclick="judgeV(false)">不认识 ✗</button>
+    </div>`;
+}
+function showVans(){ document.getElementById('v-ans').style.display='block'; document.getElementById('v-judge').style.display='flex'; }
+function judgeV(right){ if(right) vocabRight++; else vocabWrong.push(vocabQ[vocabIdx]); vocabIdx++; renderVocab(); }
+
 // 复制
 function copyPrompt(){ copyText(finalPrompt()); }
 function copyAns(){
@@ -607,6 +696,7 @@ function showToast(){
 document.getElementById('mask').addEventListener('click',e=>{if(e.target.id==='mask')closeSheet();});
 document.getElementById('mask-set').addEventListener('click',e=>{if(e.target.id==='mask-set')closeSettings();});
 document.getElementById('mask-mat').addEventListener('click',e=>{if(e.target.id==='mask-mat')closeMats();});
+document.getElementById('mask-vocab').addEventListener('click',e=>{if(e.target.id==='mask-vocab')closeVocab();});
 </script>
 </body>
 </html>
