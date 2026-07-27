@@ -20,8 +20,9 @@
     padding:18px 18px 16px;border-radius:0 0 20px 20px;}
   .top h1{margin:0;font-size:20px;font-weight:800;}
   .top p{margin:4px 0 0;font-size:12.5px;opacity:.92;}
-  .gear{position:absolute;top:14px;right:14px;font-size:18px;background:rgba(255,255,255,.22);
-    border:none;color:#fff;width:38px;height:38px;border-radius:50%;}
+  .gears{position:absolute;top:12px;right:12px;display:flex;gap:8px;}
+  .gear{font-size:17px;background:rgba(255,255,255,.22);
+    border:none;color:#fff;width:36px;height:36px;border-radius:50%;}
   .sec{margin:16px 14px;}
   .sec-t{font-size:13px;color:var(--sub);font-weight:700;margin:0 2px 8px;}
   .subjects{display:flex;gap:8px;overflow-x:auto;padding:2px;scrollbar-width:none;}
@@ -43,7 +44,6 @@
   .hint{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;
     padding:10px 12px;font-size:12px;color:#92400e;margin:14px;}
   .hint b{color:#7c2d12;}
-  /* modal */
   .mask{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;
     z-index:30;align-items:flex-end;justify-content:center;}
   .mask.show{display:flex;}
@@ -84,6 +84,14 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   .err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:12px;
     padding:12px;font-size:13px;line-height:1.6;}
+  .mat{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--line);
+    border-radius:10px;margin:8px 0;flex-wrap:wrap;}
+  .mat-t{font-weight:700;font-size:14px;flex:1 1 100%;}
+  .mat-s{font-size:12px;color:var(--sub);flex:1;}
+  .mat-del{background:#fef2f2;color:#b91c1c;border:none;border-radius:8px;padding:6px 10px;font-size:12px;}
+  .chk{display:flex;align-items:center;gap:8px;font-size:13.5px;padding:6px 2px;}
+  .chk input{width:18px;height:18px;}
+  .filein{font-size:12px;color:var(--sub);margin-top:6px;}
   footer{text-align:center;color:var(--sub);font-size:11.5px;padding:10px 0 26px;}
   .addtip{font-size:11.5px;color:var(--sub);text-align:center;margin:6px 0 0;}
 </style>
@@ -91,9 +99,12 @@
 <body>
 
 <div class="top">
-  <button class="gear" onclick="openSettings()">⚙️</button>
+  <div class="gears">
+    <button class="gear" onclick="openMats()" title="资料库">📚</button>
+    <button class="gear" onclick="openSettings()" title="设置">⚙️</button>
+  </div>
   <h1>📚 七年级学习小助手</h1>
-  <p>点科目 → 点功能 → 直接提问，AI 答案当场显示（也可复制去 WorkBuddy）</p>
+  <p>点科目 → 点功能 → 直接提问，AI 答案当场显示（可基于你的教材/笔记）</p>
 </div>
 
 <div class="sec">
@@ -108,11 +119,11 @@
 </div>
 
 <div class="hint">
-  💡 <b>用法：</b>先点右上角 ⚙️ 填入 DeepSeek API Key（仅一次）。之后选科目+功能，
-  点「直接提问 ▶」即可当场得到 AI 讲解/练习/画图描述。没有 Key 也能用「复制提示词」去 WorkBuddy 提问。
+  💡 <b>用法：</b>先点右上角 <b>⚙️</b> 填 DeepSeek Key（仅一次）。点 <b>📚</b> 把教材/笔记导入「资料库」，
+  答题时勾选对应资料，AI 就会<b>严格依据这些资料</b>讲解、出题。没资料也能用，只是偏通用。
 </div>
 
-<footer>本助手帮你生成提问 · 填 Key 后可直接调用大模型出答案 · 可「添加到主屏幕」当 App 用</footer>
+<footer>本助手生成提问 + 直接调用大模型 · 资料仅存本机 · 可「添加到主屏幕」当 App 用</footer>
 
 <!-- 功能弹层 -->
 <div class="mask" id="mask">
@@ -122,6 +133,7 @@
       <h3 id="m-t"></h3>
       <p class="sub" id="m-s"></p>
       <div id="m-fields"></div>
+      <div id="m-mats"></div>
       <div class="pbox" id="m-prompt"></div>
       <div class="btns"><button class="btn" id="ask-btn" onclick="askAI()">直接提问 ▶</button></div>
       <div class="btns">
@@ -156,6 +168,25 @@
   </div>
 </div>
 
+<!-- 资料库弹层 -->
+<div class="mask" id="mask-mat">
+  <div class="sheet">
+    <div class="sheet-wrap">
+      <button class="close" onclick="closeMats()">×</button>
+      <h3>📚 资料库</h3>
+      <p class="sub">导入教材章节 / 复习提纲 / 课堂笔记。仅存本机，答题时可勾选作为依据。</p>
+      <div id="mat-list"></div>
+      <div class="field" style="margin-top:14px;border-top:1px dashed var(--line);padding-top:12px">
+        <label>添加资料</label>
+        <input id="mat-title" placeholder="标题，如：七下数学-二元一次方程组">
+        <textarea id="mat-content" placeholder="把教材内容或笔记粘贴到这里（建议控制在一章/一节）" style="margin-top:8px"></textarea>
+        <div class="filein">或从文件导入（.txt / .md）：<input id="mat-file" type="file" accept=".txt,.md"></div>
+        <div class="btns" style="margin-top:10px"><button class="btn" onclick="addMat()">保存到资料库</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast">已复制 ✓</div>
 
 <script>
@@ -175,6 +206,8 @@ const TASKS = [
 let curSub='math', curTask=null, curData={};
 let API_KEY=localStorage.getItem('ds_key')||'';
 let MODEL=localStorage.getItem('ds_model')||'deepseek-chat';
+let MATERIALS=JSON.parse(localStorage.getItem('materials')||'[]');
+let selMatIds=new Set();
 
 // render subjects
 const subsEl=document.getElementById('subs');
@@ -197,7 +230,7 @@ TASKS.forEach(t=>{
 });
 
 function openSheet(t){
-  curTask=t; curData={};
+  curTask=t; curData={}; selMatIds.clear();
   document.getElementById('m-t').textContent=t.t;
   document.getElementById('m-s').textContent='科目：'+SUBJECTS[curSub].label+' · 填一下（可留空），提示词会实时生成';
   const f=document.getElementById('m-fields'); f.innerHTML='';
@@ -208,7 +241,7 @@ function openSheet(t){
   }
   if(t.needTopic){
     f.innerHTML+=`<div class="field"><label>要练的知识点</label>
-      <input id="i-topic" placeholder="如：一元一次方程 / 细胞结构 / 唐朝"></div>`;
+      <input id="i-topic" placeholder="如：二元一次方程组 / 细胞结构 / 唐朝"></div>`;
     bind('i-topic','topic');
   }
   if(t.needCount){
@@ -226,6 +259,16 @@ function openSheet(t){
       <input id="i-when" value="每天晚上 8 点"></div>`;
     bind('i-when','when');
   }
+  // 资料勾选区
+  const mb=document.getElementById('m-mats');
+  if(MATERIALS.length){
+    mb.style.display='block';
+    mb.innerHTML='<div class="field"><label>参考资料（可选，勾选后 AI 将严格依据这些资料作答）</label>'+
+      MATERIALS.map(m=>`<label class="chk"><input type="checkbox" value="${m.id}" onchange="toggleMat(this)"> ${esc(m.title)}</label>`).join('')+'</div>';
+  }else{
+    mb.style.display='block';
+    mb.innerHTML='<div class="sub">还没有资料，点右上角 📚 添加教材/笔记（答题时可基于它们）。</div>';
+  }
   const ab=document.getElementById('m-answer');
   ab.style.display='none'; ab.innerHTML='';
   document.getElementById('ask-btn').disabled=false;
@@ -237,11 +280,12 @@ function bind(id,key){
   if(!el)return;
   el.addEventListener('input',()=>{curData[key]=el.value;render();});
 }
+function toggleMat(el){ if(el.checked) selMatIds.add(el.value); else selMatIds.delete(el.value); render(); }
 function closeSheet(){document.getElementById('mask').classList.remove('show');}
 
 function build(){
   const s=SUBJECTS[curSub].label;
-  const topic=curData.topic||'（填具体知识点，如：一元一次方程）';
+  const topic=curData.topic||'（填具体知识点，如：二元一次方程组）';
   const text=curData.text||'（把题目或作文贴这里）';
   const count=curData.count||5;
   const t=curTask.id;
@@ -277,7 +321,18 @@ function build(){
   }
   return '';
 }
-function render(){document.getElementById('m-prompt').textContent=build();}
+function finalPrompt(){
+  const base=build();
+  const mats=MATERIALS.filter(m=>selMatIds.has(m.id)).map(m=>'【'+m.title+'】\n'+m.content);
+  if(!mats.length) return base;
+  return '请严格依据下面提供的资料内容来回答，只使用资料中的信息，不要编造资料之外的内容。\n\n=== 资料开始 ===\n'+
+    mats.join('\n\n---\n\n')+'\n=== 资料结束 ===\n\n'+base;
+}
+function render(){
+  const p=build();
+  const n=selMatIds.size;
+  document.getElementById('m-prompt').textContent = n? (p+'\n\n[已附 '+n+' 份参考资料，发送时一并包含]') : p;
+}
 
 // 设置
 function openSettings(){
@@ -294,16 +349,49 @@ function saveSettings(){
   closeSettings();showToast();
 }
 
-// 复制提示词
-function copyPrompt(){
-  const txt=build();
-  copyText(txt);
+// 资料库
+function openMats(){ renderMatList(); document.getElementById('mask-mat').classList.add('show'); }
+function closeMats(){ document.getElementById('mask-mat').classList.remove('show'); }
+function renderMatList(){
+  const list=document.getElementById('mat-list');
+  if(!MATERIALS.length){ list.innerHTML='<p class="sub">还没有资料，下面添加一份。</p>'; return; }
+  list.innerHTML=MATERIALS.map(m=>`<div class="mat"><div class="mat-t">${esc(m.title)}</div>
+    <div class="mat-s">${esc(m.content.slice(0,50))}${m.content.length>50?'…':''}</div>
+    <button class="mat-del" onclick="delMat('${m.id}')">删除</button></div>`).join('');
 }
-// 复制回答
+function delMat(id){
+  MATERIALS=MATERIALS.filter(m=>m.id!==id);
+  localStorage.setItem('materials',JSON.stringify(MATERIALS));
+  selMatIds.delete(id); renderMatList();
+}
+function addMat(){
+  const t=document.getElementById('mat-title').value.trim();
+  const c=document.getElementById('mat-content').value;
+  const f=document.getElementById('mat-file').files[0];
+  if(f){
+    const r=new FileReader();
+    r.onload=()=>saveMat(t||f.name, (c?c+'\n\n':'')+r.result);
+    r.readAsText(f);
+  }else{
+    saveMat(t,c);
+  }
+}
+function saveMat(t,c){
+  if(!c||!c.trim()){ return; }
+  MATERIALS.push({id:'m'+Date.now(), title:t||('资料'+(MATERIALS.length+1)), content:c});
+  localStorage.setItem('materials',JSON.stringify(MATERIALS));
+  document.getElementById('mat-title').value='';
+  document.getElementById('mat-content').value='';
+  document.getElementById('mat-file').value='';
+  renderMatList(); showToast();
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// 复制
+function copyPrompt(){ copyText(finalPrompt()); }
 function copyAns(){
   const el=document.querySelector('#m-answer .ans');
-  if(!el)return;
-  copyText(el.innerText);
+  if(!el)return; copyText(el.innerText);
 }
 function copyText(txt){
   navigator.clipboard.writeText(txt).then(showToast).catch(()=>{
@@ -315,7 +403,7 @@ function copyText(txt){
 // 直接调用 DeepSeek
 async function askAI(){
   if(!API_KEY){openSettings();return;}
-  const prompt=build();
+  const prompt=finalPrompt();
   const box=document.getElementById('m-answer');
   box.style.display='block';
   box.innerHTML='<div class="loading">AI 正在解答…</div>';
@@ -351,6 +439,7 @@ function showToast(){
 }
 document.getElementById('mask').addEventListener('click',e=>{if(e.target.id==='mask')closeSheet();});
 document.getElementById('mask-set').addEventListener('click',e=>{if(e.target.id==='mask-set')closeSettings();});
+document.getElementById('mask-mat').addEventListener('click',e=>{if(e.target.id==='mask-mat')closeMats();});
 </script>
 </body>
 </html>
