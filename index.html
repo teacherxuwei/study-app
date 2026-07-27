@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>七年级学习小助手</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  :root{
+    --bg:#eef2f8; --card:#fff; --ink:#1f2937; --sub:#6b7280;
+    --brand:#3b6ef0; --brand2:#16b8a6; --line:#e6ebf2; --chip:#eef3ff;
+  }
+  html,body{margin:0;padding:0;}
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.6;
+    max-width:480px;margin:0 auto;min-height:100vh;}
+  .top{background:linear-gradient(135deg,#3b6ef0,#16b8a6);color:#fff;
+    padding:18px 18px 16px;border-radius:0 0 20px 20px;}
+  .top h1{margin:0;font-size:20px;font-weight:800;}
+  .top p{margin:4px 0 0;font-size:12.5px;opacity:.92;}
+  .sec{margin:16px 14px;}
+  .sec-t{font-size:13px;color:var(--sub);font-weight:700;margin:0 2px 8px;}
+  .subjects{display:flex;gap:8px;overflow-x:auto;padding:2px;scrollbar-width:none;}
+  .subjects::-webkit-scrollbar{display:none;}
+  .subj{flex:none;background:var(--card);border:2px solid transparent;
+    border-radius:14px;padding:10px 12px;min-width:62px;text-align:center;
+    box-shadow:0 2px 6px rgba(31,41,55,.05);}
+  .subj .e{font-size:22px;display:block;}
+  .subj .n{font-size:13px;font-weight:700;margin-top:2px;}
+  .subj.on{border-color:var(--brand);background:#f3f7ff;}
+  .subj.on .n{color:var(--brand);}
+  .tasks{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .task{background:var(--card);border-radius:16px;padding:14px;
+    box-shadow:0 2px 8px rgba(31,41,55,.05);display:flex;align-items:center;gap:10px;}
+  .task .ic{font-size:24px;}
+  .task .tl{font-size:14px;font-weight:700;}
+  .task .td{font-size:11px;color:var(--sub);}
+  .task:active{transform:scale(.97);}
+  .hint{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;
+    padding:10px 12px;font-size:12px;color:#92400e;margin:14px;}
+  .hint b{color:#7c2d12;}
+  /* modal */
+  .mask{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;
+    z-index:30;align-items:flex-end;justify-content:center;}
+  .mask.show{display:flex;}
+  .sheet{background:#fff;width:100%;max-width:480px;border-radius:20px 20px 0 0;
+    padding:18px 18px 28px;max-height:88vh;overflow-y:auto;animation:up .25s ease;}
+  @keyframes up{from{transform:translateY(30px);opacity:.6}to{transform:none;opacity:1}}
+  .sheet h3{margin:0 0 4px;font-size:17px;}
+  .sheet .sub{font-size:12px;color:var(--sub);margin:0 0 14px;}
+  .field{margin:12px 0;}
+  .field label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;}
+  .field input,.field textarea{width:100%;border:1.5px solid var(--line);
+    border-radius:12px;padding:11px;font-size:14px;font-family:inherit;resize:vertical;}
+  .field textarea{min-height:84px;}
+  .field input:focus,.field textarea:focus{outline:none;border-color:var(--brand);}
+  .pbox{background:#0f172a;color:#e2e8f0;border-radius:12px;padding:13px;
+    font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;margin:8px 0 12px;}
+  .btns{display:flex;gap:10px;margin-top:6px;}
+  .btn{flex:1;border:none;border-radius:13px;padding:13px;font-size:15px;
+    font-weight:700;color:#fff;background:var(--brand);}
+  .btn.ghost{background:#eef3ff;color:var(--brand);}
+  .btn:active{opacity:.85;}
+  .close{position:absolute;top:14px;right:16px;font-size:22px;color:var(--sub);background:none;border:none;}
+  .sheet-wrap{position:relative;}
+  .toast{position:fixed;left:50%;top:42%;transform:translateX(-50%);
+    background:rgba(15,23,42,.9);color:#fff;padding:10px 18px;border-radius:24px;
+    font-size:14px;z-index:50;opacity:0;transition:.2s;pointer-events:none;}
+  .toast.show{opacity:1;}
+  footer{text-align:center;color:var(--sub);font-size:11.5px;padding:10px 0 26px;}
+  .addtip{font-size:11.5px;color:var(--sub);text-align:center;margin:6px 0 0;}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>📚 七年级学习小助手</h1>
+  <p>点科目 → 点功能 → 一键复制，去 WorkBuddy 提问（不用再打字）</p>
+</div>
+
+<div class="sec">
+  <p class="sec-t">① 选科目</p>
+  <div class="subjects" id="subs"></div>
+  <p class="addtip">👆 可左右滑动查看更多科目</p>
+</div>
+
+<div class="sec">
+  <p class="sec-t">② 选功能</p>
+  <div class="tasks" id="tasks"></div>
+</div>
+
+<div class="hint">
+  💡 <b>用法：</b>选好科目和功能后，按提示填一下（可留空），点「复制提示词」，
+  再打开 WorkBuddy 粘贴发送即可。想每天自动刷题？选「每日复习」复制指令发给 WorkBuddy。
+</div>
+
+<footer>本助手帮你生成提问 · 实际讲解由 WorkBuddy 完成 · 可「添加到主屏幕」当 App 用</footer>
+
+<!-- modal -->
+<div class="mask" id="mask">
+  <div class="sheet">
+    <div class="sheet-wrap">
+      <button class="close" onclick="closeSheet()">×</button>
+      <h3 id="m-t"></h3>
+      <p class="sub" id="m-s"></p>
+      <div id="m-fields"></div>
+      <div class="pbox" id="m-prompt"></div>
+      <div class="btns">
+        <button class="btn ghost" onclick="closeSheet()">返回</button>
+        <button class="btn" onclick="copyPrompt()">复制提示词</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast">已复制 ✓</div>
+
+<script>
+const SUBJECTS = {
+  chinese:{label:'语文',e:'📖'}, math:{label:'数学',e:'🔢'}, english:{label:'英语',e:'🔤'},
+  history:{label:'历史',e:'🏛️'}, geo:{label:'地理',e:'🌏'}, bio:{label:'生物',e:'🧬'},
+  politics:{label:'道法',e:'⚖️'}
+};
+const TASKS = [
+  {id:'explain',ic:'💡',t:'分步讲题',d:'讲思路+标易错点',needText:true},
+  {id:'practice',ic:'✏️',t:'定向练习',d:'按知识点出题',needTopic:true,needCount:true},
+  {id:'visual',ic:'🖼️',t:'知识卡片',d:'画图/时间轴',needTopic:true},
+  {id:'writing',ic:'✍️',t:'写作升格',d:'作文批改润色',needText:true},
+  {id:'plan',ic:'📅',t:'周计划',d:'排复习清单',needWeek:true},
+  {id:'auto',ic:'⏰',t:'每日复习',d:'设自动刷题',needAuto:true}
+];
+let curSub='math', curTask=null, curData={};
+
+// render subjects
+const subsEl=document.getElementById('subs');
+Object.entries(SUBJECTS).forEach(([k,v])=>{
+  const d=document.createElement('div');
+  d.className='subj'+(k===curSub?' on':'');
+  d.innerHTML=`<span class="e">${v.e}</span><span class="n">${v.label}</span>`;
+  d.onclick=()=>{curSub=k;document.querySelectorAll('.subj').forEach(x=>x.classList.remove('on'));
+    d.classList.add('on');};
+  subsEl.appendChild(d);
+});
+// render tasks
+const tasksEl=document.getElementById('tasks');
+TASKS.forEach(t=>{
+  const d=document.createElement('div');
+  d.className='task';
+  d.innerHTML=`<span class="ic">${t.ic}</span><span><span class="tl">${t.t}</span><br><span class="td">${t.d}</span></span>`;
+  d.onclick=()=>openSheet(t);
+  tasksEl.appendChild(d);
+});
+
+function openSheet(t){
+  curTask=t; curData={};
+  document.getElementById('m-t').textContent=t.t;
+  document.getElementById('m-s').textContent='科目：'+SUBJECTS[curSub].label+' · 填一下（可留空），提示词会实时生成';
+  const f=document.getElementById('m-fields'); f.innerHTML='';
+  if(t.needText){
+    f.innerHTML=`<div class="field"><label>把题目 / 作文贴这里</label>
+      <textarea id="i-text" placeholder="直接粘贴内容，可留空"></textarea></div>`;
+    bind('i-text','text');
+  }
+  if(t.needTopic){
+    f.innerHTML+=`<div class="field"><label>要练的知识点</label>
+      <input id="i-topic" placeholder="如：一元一次方程 / 细胞结构 / 唐朝"></div>`;
+    bind('i-topic','topic');
+  }
+  if(t.needCount){
+    f.innerHTML+=`<div class="field"><label>出题数量</label>
+      <input id="i-count" type="number" value="5" min="1" max="20"></div>`;
+    bind('i-count','count');
+  }
+  if(t.needWeek){
+    f.innerHTML+=`<div class="field"><label>每天可用时间</label>
+      <input id="i-time" value="平日40分钟，周末2小时"></div>`;
+    bind('i-time','time');
+  }
+  if(t.needAuto){
+    f.innerHTML+=`<div class="field"><label>推送时间</label>
+      <input id="i-when" value="每天晚上 8 点"></div>`;
+    bind('i-when','when');
+  }
+  render();
+  document.getElementById('mask').classList.add('show');
+}
+function bind(id,key){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.addEventListener('input',()=>{curData[key]=el.value;render();});
+}
+function closeSheet(){document.getElementById('mask').classList.remove('show');}
+
+function build(){
+  const s=SUBJECTS[curSub].label;
+  const topic=curData.topic||'（填具体知识点，如：一元一次方程）';
+  const text=curData.text||'（把题目或作文贴这里）';
+  const count=curData.count||5;
+  const t=curTask.id;
+  if(t==='explain'){
+    if(curSub==='math') return `请一步步推导这道七年级数学题，并在每一步标出「学生最容易错的地方」：\n${text}`;
+    if(curSub==='chinese') return `请逐句翻译这段文言文，并列出每个重点字词的意思和用法：\n${text}`;
+    if(curSub==='english') return `请用七年级学过的语法，解释这个句子为什么用这个时态，并给出类似例句：\n${text}`;
+    return `请讲解七年级${s}的「${topic}」，用初中生能懂的语言，分点说明并举例。`;
+  }
+  if(t==='practice'){
+    if(curSub==='math') return `出 ${count} 道七年级数学「${topic}」易错题，难度中等偏上，每道附：正确答案 + 分步解析 + 这道题的陷阱提示。`;
+    if(curSub==='english') return `出 ${count} 道七年级英语「${topic}」练习题，附答案和易混点说明。`;
+    if(curSub==='chinese') return `出 ${count} 道七年级语文「${topic}」练习题（如阅读理解/病句/文言），附答案和解析。`;
+    return `出 ${count} 道七年级${s}「${topic}」填空题/选择题，附答案，并标注对应课本章节。`;
+  }
+  if(t==='visual'){
+    if(curSub==='bio') return `画一张七年级生物「${topic}」结构示意图，标注主要部分，并在关键处留填空框。`;
+    if(curSub==='geo') return `画一张七年级地理「${topic}」简图/地图，标注关键位置，并留出名称填空框。`;
+    if(curSub==='history') return `画一条七年级历史「${topic}」时间轴，标出起止年和标志性事件，用颜色区分不同时期。`;
+    if(curSub==='math') return `画一张七年级数学「${topic}」示意图（如函数图像/几何辅助线），帮助理解。`;
+    if(curSub==='chinese') return `画一张七年级语文「${topic}」思维导图/文章结构图，帮助记忆。`;
+    return `画一张七年级${s}「${topic}」知识卡片图，结构清晰、便于背诵。`;
+  }
+  if(t==='writing'){
+    if(curSub==='english') return `润色这篇七年级英语作文，保留原意、升级词汇和句式，并用括号逐条标注改动的语法点（时态/单三/冠词等）：\n${text}`;
+    return `这是我写的七年级${s}作文，请：①指出 3 个最该改的地方；②给出升格后的段落示范；③给我一个好开头/好结尾模板。\n${text}`;
+  }
+  if(t==='plan'){
+    return `帮我制定一份本周七年级复习计划：\n- 科目：${s}（弱项）\n- 每天可用：${curData.time||'平日40分钟，周末2小时'}\n- 输出：按周一到周日排列的清单，每天标注科目、具体任务、预计时长，并留出打勾框。`;
+  }
+  if(t==='auto'){
+    return `请帮我设置定时任务：${curData.when||'每天晚上 8 点'}，给我推送一道七年级${s}易错题，附答案和解析。`;
+  }
+  return '';
+}
+function render(){document.getElementById('m-prompt').textContent=build();}
+function copyPrompt(){
+  const txt=build();
+  navigator.clipboard.writeText(txt).then(showToast).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);
+    ta.select();document.execCommand('copy');ta.remove();showToast();
+  });
+}
+function showToast(){
+  const t=document.getElementById('toast');t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),1300);
+}
+document.getElementById('mask').addEventListener('click',e=>{if(e.target.id==='mask')closeSheet();});
+</script>
+</body>
+</html>
