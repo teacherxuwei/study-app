@@ -124,6 +124,12 @@
   <div class="tasks" id="tasks"></div>
 </div>
 
+<div class="sec" id="vocab-sec" style="display:none">
+  <p class="sec-t">③ 英语专属 · 单词测验</p>
+  <button class="btn" style="width:100%;background:var(--brand2)" onclick="openVocab()">🔤 单词测验（从资料库抽词自测）</button>
+  <p class="addtip">在 📚 里添加「单词本」（每行 英文 中文，如 apple 苹果），即可离线抽词测验</p>
+</div>
+
 <div class="sec">
   <button class="btn" id="photo-ask-btn" style="width:100%;background:var(--brand2)" onclick="document.getElementById('photo-img').click()">📷 拍照识题（拍一道题，用当前科目直接讲解）</button>
   <input id="photo-img" type="file" accept="image/*" capture="environment" style="display:none">
@@ -247,8 +253,7 @@ const TASKS = [
   {id:'visual',ic:'🖼️',t:'知识卡片',d:'画图/时间轴',needTopic:true},
   {id:'writing',ic:'✍️',t:'写作升格',d:'作文批改润色',needText:true},
   {id:'plan',ic:'📅',t:'周计划',d:'排复习清单',needWeek:true},
-  {id:'auto',ic:'⏰',t:'每日复习',d:'设自动刷题',needAuto:true},
-  {id:'vocab',ic:'🔤',t:'单词测验',d:'从资料库抽词',needVocab:true}
+  {id:'auto',ic:'⏰',t:'每日复习',d:'设自动刷题',needAuto:true}
 ];
 let curSub='math', curTask=null, curData={};
 let API_KEY=localStorage.getItem('ds_key')||'';
@@ -264,7 +269,8 @@ Object.entries(SUBJECTS).forEach(([k,v])=>{
   d.className='subj'+(k===curSub?' on':'');
   d.innerHTML=`<span class="e">${v.e}</span><span class="n">${v.label}</span>`;
   d.onclick=()=>{curSub=k;document.querySelectorAll('.subj').forEach(x=>x.classList.remove('on'));
-    d.classList.add('on');};
+    d.classList.add('on');
+    document.getElementById('vocab-sec').style.display=(k==='english')?'block':'none';};
   subsEl.appendChild(d);
 });
 // render tasks
@@ -273,7 +279,7 @@ TASKS.forEach(t=>{
   const d=document.createElement('div');
   d.className='task';
   d.innerHTML=`<span class="ic">${t.ic}</span><span><span class="tl">${t.t}</span><br><span class="td">${t.d}</span></span>`;
-  d.onclick=()=>{ if(t.id==='vocab') openVocab(); else openSheet(t); };
+  d.onclick=()=>openSheet(t);
   tasksEl.appendChild(d);
 });
 
