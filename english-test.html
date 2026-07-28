@@ -360,6 +360,12 @@ const selectedUnits=new Set(UNITS.map(u=>u.full));
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1500);}
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+/* 打乱单题选项，使正确项下标随机分布（题库里 a 多固定为 0，必须重排） */
+function shuffleOptions(q){
+  const idx=[0,1,2,3];
+  for(let i=idx.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
+  return Object.assign({},q,{opts:idx.map(k=>q.opts[k]),a:idx.indexOf(q.a)});
+}
 function $(id){return document.getElementById(id);}
 
 /* ===================== 开始页渲染 ===================== */
@@ -491,7 +497,7 @@ function showQuizLoading(msg){
   window.scrollTo(0,0);
 }
 function beginQuiz(questions,srcLabel){
-  Q=questions;
+  Q=questions.map(shuffleOptions);
   for(const k in answers) delete answers[k];
   const quizEl=$('quiz');
   quizEl.innerHTML='';
