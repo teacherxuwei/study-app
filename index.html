@@ -103,6 +103,13 @@
   footer{text-align:center;color:var(--sub);font-size:11.5px;padding:10px 0 26px;}
   .addtip{font-size:11.5px;color:var(--sub);text-align:center;margin:6px 0 0;}
   .statusline{font-size:12px;color:var(--brand);margin-top:4px;}
+  /* ===== 英语水平测试 全屏浮层（内嵌 iframe）===== */
+  #etest-frame{position:fixed;inset:0;z-index:70;background:#fff;display:none;flex-direction:column}
+  #etest-frame.show{display:flex}
+  #etest-bar{flex:none;height:48px;display:flex;align-items:center;background:linear-gradient(135deg,#3b6ef0,#16b8a6);color:#fff;box-shadow:0 2px 8px rgba(15,23,42,.12)}
+  #etest-bar .etest-back{background:none;border:none;color:#fff;font-size:15px;font-weight:700;padding:0 14px;cursor:pointer;height:100%}
+  #etest-bar .etest-t{font-size:14px;font-weight:700;opacity:.95}
+  #etest-frame iframe{flex:1;width:100%;border:none;background:#f5f7fb}
 </style>
 </head>
 <body>
@@ -128,9 +135,10 @@
 </div>
 
 <div class="sec" id="vocab-sec" style="display:none">
-  <p class="sec-t">③ 英语专属 · 单词测验</p>
+  <p class="sec-t">③ 英语专属 · 测试与练习</p>
   <button class="btn" style="width:100%;background:var(--brand2)" onclick="openVocab()">🔤 单词测验（从资料库抽词自测）</button>
-  <p class="addtip">在 📚 里添加「单词本」（每行 英文 中文，如 apple 苹果），即可离线抽词测验</p>
+  <button class="btn" style="width:100%;background:linear-gradient(135deg,#2563eb,#7c3aed);margin-top:10px" onclick="openEtest()">📝 七上英语水平测试（诊断 + 评分）</button>
+  <p class="addtip">单词测验：在 📚 添加「单词本」（每行 英文 中文）即可离线抽词。水平测试：可选单元 / 全学期，本地随机或 AI 出题，自动判分并记录成绩。</p>
 </div>
 
 <div class="sec" id="poem-sec" style="display:none">
@@ -150,7 +158,7 @@
   可<b>拍照转文字</b>、可<b>整本 PDF 自动按章节拆分</b>。答题时勾选对应资料，AI 就会<b>严格依据这些资料</b>讲解、出题。
 </div>
 
-<footer>v2026-07-27e · 本助手生成提问 + 直接调用大模型 · 资料仅存本机 · 可「添加到主屏幕」当 App 用</footer>
+<footer>v2026-07-28a · 本助手生成提问 + 直接调用大模型 · 资料仅存本机 · 可「添加到主屏幕」当 App 用</footer>
 
 <!-- 功能弹层 -->
 <div class="mask" id="mask">
@@ -265,6 +273,15 @@
       <div id="p-read" style="display:none"></div>
     </div>
   </div>
+</div>
+
+<!-- 英语水平测试 全屏浮层 -->
+<div id="etest-frame">
+  <div id="etest-bar">
+    <button class="etest-back" onclick="closeEtest()">← 返回</button>
+    <span class="etest-t">七上英语 · 水平诊断测试</span>
+  </div>
+  <iframe id="etest-iframe" src="about:blank" title="七上英语水平测试"></iframe>
 </div>
 
 <div class="toast" id="toast">已复制 ✓</div>
@@ -853,6 +870,19 @@ document.getElementById('mask-set').addEventListener('click',e=>{if(e.target.id=
 document.getElementById('mask-mat').addEventListener('click',e=>{if(e.target.id==='mask-mat')closeMats();});
 document.getElementById('mask-vocab').addEventListener('click',e=>{if(e.target.id==='mask-vocab')closeVocab();});
 document.getElementById('mask-poem').addEventListener('click',e=>{if(e.target.id==='mask-poem')closePoem();});
+
+// ===== 入口：英语水平测试（全屏内嵌，与主 App 同域名共享 Key/历史）=====
+function openEtest(){
+  const f=document.getElementById('etest-frame');
+  const ifr=document.getElementById('etest-iframe');
+  if(ifr.getAttribute('data-loaded')!=='1'){ ifr.src='english-test.html'; ifr.setAttribute('data-loaded','1'); }
+  f.classList.add('show');
+  document.body.style.overflow='hidden';
+}
+function closeEtest(){
+  document.getElementById('etest-frame').classList.remove('show');
+  document.body.style.overflow='';
+}
 </script>
 </body>
 </html>
