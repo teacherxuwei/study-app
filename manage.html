@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>资料管理后台 · 七年级</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  :root{
+    --bg:#eef2f8; --card:#fff; --ink:#1f2937; --sub:#6b7280;
+    --brand:#3b6ef0; --brand2:#16b8a6; --line:#e6ebf2; --chip:#eef3ff;
+    --red:#dc2626; --green:#16a34a; --amber:#d97706;
+  }
+  html,body{margin:0;padding:0;}
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.6;
+    max-width:720px;margin:0 auto;min-height:100vh;padding-bottom:30px;}
+  .top{background:linear-gradient(135deg,#3b6ef0,#16b8a6);color:#fff;
+    padding:16px 18px;border-radius:0 0 18px 18px;}
+  .top h1{margin:0;font-size:19px;font-weight:800;}
+  .top p{margin:4px 0 0;font-size:12.5px;opacity:.92;}
+  .top a{color:#fff;text-decoration:underline;font-size:12.5px;}
+  .pad{margin:14px;}
+  .panel{background:var(--card);border-radius:16px;padding:14px;box-shadow:0 2px 8px rgba(31,41,55,.05);margin:14px;}
+  .panel h3{margin:0 0 8px;font-size:16px;}
+  .sub{font-size:12px;color:var(--sub);margin:0 0 10px;}
+  .field{margin:10px 0;}
+  .field label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;}
+  .field input,.field textarea,.field select{width:100%;border:1.5px solid var(--line);
+    border-radius:12px;padding:11px;font-size:14px;font-family:inherit;background:#fff;resize:vertical;}
+  .field textarea{min-height:90px;}
+  .field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--brand);}
+  .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+  .btn{flex:1;border:none;border-radius:13px;padding:12px;font-size:14px;font-weight:700;
+    color:#fff;background:var(--brand);min-width:120px;}
+  .btn.ghost{background:#eef3ff;color:var(--brand);}
+  .btn:active{opacity:.85;}
+  .btn:disabled{opacity:.6;}
+  .close{background:none;border:none;font-size:20px;color:var(--sub);}
+  .mini{display:inline-block;background:#eef3ff;color:var(--brand);border:none;
+    border-radius:9px;padding:8px 12px;font-size:12.5px;font-weight:700;margin:4px 6px 0 0;}
+  .mini:active{opacity:.85;}
+  .mini:disabled{opacity:.5;}
+  .crumb{font-size:13px;font-weight:700;color:var(--brand);padding:6px 2px 10px;display:flex;flex-wrap:wrap;gap:2px;align-items:center;}
+  .crumb .bc{cursor:pointer;}
+  .crumb .bc-sep{color:var(--sub);margin:0 2px;}
+  .node{display:flex;align-items:center;gap:8px;padding:11px 12px;border:1px solid var(--line);
+    border-radius:11px;margin:7px 0;background:#fff;}
+  .node .ic{font-size:18px;}
+  .node .nm{font-weight:700;font-size:14px;flex:1;}
+  .node .meta{font-size:11.5px;color:var(--sub);}
+  .node button{background:#fef2f2;color:var(--red);border:none;border-radius:8px;padding:6px 10px;font-size:12px;margin-left:6px;}
+  .node button.go{background:#eef3ff;color:var(--brand);}
+  .actbar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;}
+  .statusline{font-size:12px;color:var(--brand);margin-top:6px;}
+  .err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:12px;padding:10px;font-size:12.5px;}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;
+    background:#eef3ff;color:var(--brand);margin-left:4px;}
+  .tag.poem{background:#fef3c7;color:var(--amber);}
+  .tag.ref{background:#d1fae5;color:var(--green);}
+  .toast{position:fixed;left:50%;top:40%;transform:translateX(-50%);
+    background:rgba(15,23,42,.9);color:#fff;padding:10px 18px;border-radius:24px;
+    font-size:14px;z-index:60;opacity:0;transition:.2s;pointer-events:none;}
+  .toast.show{opacity:1;}
+  .mask{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;z-index:40;
+    align-items:center;justify-content:center;padding:18px;}
+  .mask.show{display:flex;}
+  .modal{background:#fff;border-radius:18px;padding:18px;width:100%;max-width:560px;max-height:86vh;overflow-y:auto;}
+  .modal h3{margin:0 0 8px;font-size:17px;}
+  .modal .body{font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word;
+    background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px;max-height:46vh;overflow-y:auto;}
+  .funcrow{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;}
+  .fchip{border:1.5px solid var(--line);background:#fff;color:var(--sub);border-radius:20px;
+    padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;}
+  .fchip.on{background:var(--brand);color:#fff;border-color:var(--brand);}
+  .fchip.on.poem{background:var(--amber);border-color:var(--amber);}
+  .fchip.on.ref{background:var(--green);border-color:var(--green);}
+  .filein{font-size:12px;color:var(--sub);margin-top:6px;line-height:1.9;}
+  .filein input[type=file]{font-size:12px;}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>📂 资料管理后台</h1>
+  <p>按「课程 → 子目录 → 文件」任意层级整理资料，并关联到学习功能。<a href="index.html">← 返回学习小助手</a></p>
+</div>
+
+<div class="panel">
+  <h3 style="display:flex;justify-content:space-between;align-items:center">
+    <span>☁️ 云端同步</span>
+    <label style="font-size:13px;font-weight:700;color:var(--sub);cursor:pointer">
+      <input type="checkbox" id="cloud-toggle" onchange="toggleCloud(this)"> 启用
+    </label>
+  </h3>
+  <span id="cloud-status" class="statusline"></span>
+  <p class="sub">启用后，资料保存在 Supabase 云端，全家/多设备通过「学习小助手」共享同一份资料库。</p>
+</div>
+
+<div class="panel">
+  <h3>当前位置</h3>
+  <div class="crumb" id="crumb"></div>
+  <div id="tree"></div>
+  <div class="actbar">
+    <button class="mini" onclick="newFolder()">📁 新建文件夹</button>
+    <button class="mini" onclick="document.getElementById('m-file').click()">📄 上传文件(.txt/.md)</button>
+    <button class="mini" onclick="document.getElementById('m-ocr').click()">📷 拍照/图片转文字</button>
+    <button class="mini" onclick="document.getElementById('m-pdf').click()">📑 整本PDF拆章节</button>
+    <input id="m-file" type="file" accept=".txt,.md" style="display:none">
+    <input id="m-ocr" type="file" accept="image/*" capture="environment" style="display:none">
+    <input id="m-pdf" type="file" accept=".pdf" style="display:none">
+  </div>
+  <span id="up-status" class="statusline"></span>
+</div>
+
+<div class="panel">
+  <h3>➕ 添加资料到「<span id="m-target">根目录</span>」</h3>
+  <div class="field">
+    <label>标题</label>
+    <input id="m-title" placeholder="如：七上英语-Unit3 词汇表">
+  </div>
+  <div class="field">
+    <label>内容（可粘贴 / 导入 / 拍照 / PDF 自动填入）</label>
+    <textarea id="m-content" placeholder="把教材内容、单词表或笔记粘贴到这里"></textarea>
+  </div>
+  <div class="filein">
+    <button class="mini" id="m-ai" onclick="aiFormat()">✨ AI 整理格式</button>
+    <span id="m-ai-status" class="statusline"></span>
+    <br><span>提示：英语资料点「AI 整理」可自动提取「英文 中文」单词表，便于词汇测评。</span>
+  </div>
+  <div class="btns" style="margin-top:10px">
+    <button class="btn" onclick="saveAdd()">保存到当前文件夹</button>
+  </div>
+</div>
+
+<div class="panel" id="pdf-preview" style="display:none"></div>
+
+<!-- 文件查看 / 关联弹层 -->
+<div class="mask" id="mask-view">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3 id="v-title">标题</h3>
+      <button class="close" onclick="closeView()">×</button>
+    </div>
+    <div class="body" id="v-body"></div>
+    <p class="sub" style="margin-top:12px">关联到学习功能（文件级，可多选）：</p>
+    <div class="funcrow" id="v-funcs"></div>
+    <div class="btns">
+      <button class="btn ghost" onclick="closeView()">完成</button>
+      <button class="btn" style="background:var(--red)" onclick="delCurrent()">删除此文件</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== Supabase 配置（与学习小助手共用同一张表）=====
+const SB_URL='https://ztjpfymhdssybowzxgni.supabase.co';
+const SB_KEY='sb_publishable_R2onapuvJugi-V18-l_vfg_lVztY-0b';
+function sbHead(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};}
+
+// ===== 本地缓存 =====
+let MAT=JSON.parse(localStorage.getItem('admin_materials')||'[]');
+let CLOUD_ON=localStorage.getItem('admin_cloud');
+CLOUD_ON=(CLOUD_ON===null)?true:CLOUD_ON==='1';
+let curPath='';
+let API_KEY=localStorage.getItem('ds_key')||'';
+let MODEL=localStorage.getItem('ds_model')||'deepseek-chat';
+let pendingChapters=[];
+let viewId=null;
+
+// ===== 工具 =====
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function showToast(msg){const t=document.getElementById('toast');if(!t){const d=document.createElement('div');d.className='toast';d.id='toast';document.body.appendChild(d);}const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),1600);}
+function itemPath(it){ return it.kind==='folder' ? (it.subject? it.subject+'/'+it.title : it.title) : (it.subject||''); }
+function allFiles(){ return MAT.filter(m=>(!m.kind||m.kind==='file')); }
+function hasFunc(m,f){ return m.funcs? m.funcs.split(',').includes(f):false; }
+
+// ===== 云端读写 =====
+async function sbLoadAll(){
+  const r=await fetch(SB_URL+'/rest/v1/materials?select=*&order=created_at.asc',{headers:sbHead()});
+  if(!r.ok) throw new Error('读取失败 '+r.status);
+  return (await r.json()).map(x=>({id:x.id,title:x.title,content:x.content,subject:x.subject||'',kind:x.kind||'file',funcs:x.funcs||''}));
+}
+async function sbUpsert(m){
+  const r=await fetch(SB_URL+'/rest/v1/materials?on_conflict=id',{method:'POST',
+    headers:Object.assign(sbHead(),{'Prefer':'resolution=merge-duplicates'}),
+    body:JSON.stringify([{id:m.id,title:m.title,content:m.content,subject:m.subject||'',kind:m.kind||'file',funcs:m.funcs||''}])});
+  if(!r.ok) throw new Error('写入失败 '+r.status);
+}
+async function sbDelete(id){
+  const r=await fetch(SB_URL+'/rest/v1/materials?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:sbHead()});
+  if(!r.ok) throw new Error('删除失败 '+r.status);
+}
+async function sbPushAll(){ await Promise.all(MAT.map(sbUpsert)); }
+function persist(){ localStorage.setItem('admin_materials', JSON.stringify(MAT)); }
+function saveAll(){ persist(); if(CLOUD_ON){ sbPushAll().catch(e=>toast('☁️ 同步失败：'+e.message)); } }
+async function pullAndMerge(){
+  const cloud=await sbLoadAll();
+  const ids=new Set(MAT.map(m=>m.id));
+  let added=0; cloud.forEach(c=>{ if(!ids.has(c.id)){ MAT.push(c); added++; }});
+  if(added) persist();
+  await sbPushAll();
+  render();
+}
+
+// ===== 渲染：面包屑 + 文件夹 + 文件 =====
+function render(){
+  document.getElementById('m-target').textContent = curPath||'根目录';
+  const segs=(curPath?curPath.split('/'):[]);
+  let crumb='<span class="bc" onclick="setPath(\'\')">📚 根目录</span>';
+  let acc='';
+  segs.forEach(s=>{ acc=acc?acc+'/'+s:s; crumb+=' <span class="bc-sep">/</span> <span class="bc" onclick="setPath(\''+esc(acc)+'\')">'+esc(s)+'</span>'; });
+  document.getElementById('crumb').innerHTML=crumb;
+
+  const folders=MAT.filter(m=>m.kind==='folder'&&(m.subject||'')===curPath);
+  const files=allFiles().filter(m=>(m.subject||'')===curPath);
+  let html='';
+  if(!folders.length && !files.length){
+    html='<p class="sub">此文件夹为空。用上面的按钮新建文件夹或添加资料。</p>';
+  }
+  folders.forEach(f=>{
+    html+='<div class="node"><span class="ic">📁</span><span class="nm">'+esc(f.title)+'</span>'+
+      '<button class="go" onclick="drill(\''+esc(f.title)+'\')">打开</button>'+
+      '<button onclick="delFolder(\''+esc(f.title)+'\')">删除</button></div>';
+  });
+  const fmap={vocab:'词',poem:'诗',ref:'参'};
+  files.forEach(f=>{
+    let tags='';
+    ['vocab','poem','ref'].forEach(k=>{ if(hasFunc(f,k)) tags+='<span class="tag '+(k==='vocab'?'':k)+'">'+fmap[k]+'</span>'; });
+    if(!tags) tags='<span class="meta">未关联</span>';
+    html+='<div class="node"><span class="ic">📄</span><span class="nm">'+esc(f.title)+'</span>'+
+      '<span class="meta">'+tags+'</span>'+
+      '<button class="go" onclick="openView(\''+f.id+'\')">关联/查看</button>'+
+      '</div>';
+  });
+  document.getElementById('tree').innerHTML=html;
+}
+function setPath(p){ curPath=p; render(); }
+function drill(name){ curPath = curPath? curPath+'/'+name : name; render(); }
+
+// ===== 新建文件夹 =====
+function newFolder(){
+  const name=prompt('文件夹名称（不能包含 / ）：');
+  if(!name) return;
+  const t=name.trim();
+  if(!t || t.includes('/')){ showToast('名称无效'); return; }
+  if(MAT.some(m=>m.kind==='folder'&&(m.subject||'')===curPath&&m.title===t)){ showToast('该层级已存在同名文件夹'); return; }
+  MAT.push({id:'f'+Date.now(), title:t, content:'', kind:'folder', subject:curPath, funcs:''});
+  saveAll(); render(); showToast('已新建文件夹');
+}
+
+// ===== 添加资料（来自表单）=====
+function saveAdd(){
+  const t=document.getElementById('m-title').value.trim();
+  const c=document.getElementById('m-content').value;
+  const f=document.getElementById('m-file').files[0];
+  if(f){
+    const r=new FileReader();
+    r.onload=()=>doSaveFile(t||f.name,(c?c+'\n\n':'')+r.result);
+    r.readAsText(f);
+  }else{
+    doSaveFile(t,c);
+  }
+}
+function doSaveFile(t,c){
+  if(!c||!c.trim()){ showToast('请先填入内容'); return; }
+  MAT.push({id:'m'+Date.now(), title:t||('资料'+(allFiles().length+1)), content:c, kind:'file', subject:curPath, funcs:''});
+  saveAll();
+  document.getElementById('m-title').value='';
+  document.getElementById('m-content').value='';
+  document.getElementById('m-file').value='';
+  render(); showToast('已保存到「'+(curPath||'根目录')+'」');
+}
+
+// ===== 拍照/OCR =====
+document.getElementById('m-ocr').addEventListener('change',e=>{
+  const file=e.target.files[0]; e.target.value=''; if(file) doOCR(file);
+});
+async function doOCR(file){
+  const st=document.getElementById('up-status');
+  try{
+    st.textContent='加载识别引擎…';
+    if(!window.Tesseract){ await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'); }
+    st.textContent='识别中（首次较慢）…';
+    const {data:{text}}=await Tesseract.recognize(file,'chi_sim',{
+      logger:m=>{ if(m.status==='recognizing text') st.textContent='识别中 '+Math.round(m.progress*100)+'%'; }
+    });
+    const ta=document.getElementById('m-content');
+    ta.value=(ta.value?ta.value+'\n\n':'')+text.trim();
+    st.textContent='✓ 已填入内容框，可编辑后保存';
+  }catch(err){ st.textContent='⚠️ 识别失败：'+err.message; }
+}
+
+// ===== AI 整理格式 =====
+async function aiFormat(){
+  if(!API_KEY){ const k=prompt('请粘贴 DeepSeek API Key（也可在下方设置）:'); if(!k){return;} API_KEY=k.trim(); localStorage.setItem('ds_key',API_KEY); }
+  const src=document.getElementById('m-content').value.trim();
+  if(!src){ showToast('请先填入资料内容'); return; }
+  const btn=document.getElementById('m-ai'); const st=document.getElementById('m-ai-status');
+  btn.disabled=true; st.textContent='AI 整理中…';
+  const prompt='你是一位英语助教。请从下面的学习资料中提取所有单词/短语及其释义，整理成规范的单词表。\n要求：\n1. 每行一个，格式严格为「英文 中文」（英文和中文之间只用一个空格，不要冒号、标点或编号）\n2. 英文在前，中文释义在后\n3. 去掉例句、解释性段落和无关文字，只保留词对\n4. 只输出单词表本身，不要任何前缀、说明或编号\n\n资料：\n'+src;
+  try{
+    const res=await fetch('https://api.deepseek.com/chat/completions',{
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+API_KEY},
+      body:JSON.stringify({model:MODEL,messages:[{role:'user',content:prompt}],stream:false,temperature:0.2})
+    });
+    if(!res.ok){ let m='整理失败（'+res.status+'）'; try{const e=await res.json();if(e&&e.error&&e.error.message)m=e.error.message;}catch(_){} throw new Error(m); }
+    const data=await res.json();
+    const ans=(data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'';
+    document.getElementById('m-content').value=ans.trim();
+    st.textContent='✓ 已整理为单词表';
+  }catch(err){ st.textContent='⚠️ '+err.message; }
+  finally{ btn.disabled=false; }
+}
+
+// ===== 整本 PDF 按章节拆分 =====
+document.getElementById('m-pdf').addEventListener('change',e=>{
+  const file=e.target.files[0]; e.target.value=''; if(file) doPDF(file);
+});
+async function doPDF(file){
+  const st=document.getElementById('up-status');
+  try{
+    st.textContent='加载 PDF 解析器…';
+    if(!window.pdfjsLib){
+      await loadScript('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js');
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+    }
+    st.textContent='解析中（大文件请稍候）…';
+    const buf=await file.arrayBuffer();
+    const pdf=await window.pdfjsLib.getDocument({data:buf}).promise;
+    let full='';
+    for(let i=1;i<=pdf.numPages;i++){
+      st.textContent='读取第 '+i+' / '+pdf.numPages+' 页…';
+      const page=await pdf.getPage(i);
+      const tc=await page.getTextContent();
+      full+='\n'+tc.items.map(it=>it.str).join('');
+    }
+    const chapters=splitByChapters(full);
+    st.textContent='识别到 '+chapters.length+' 段，请勾选保存：';
+    renderPDFPreview(chapters);
+  }catch(err){ st.textContent='⚠️ PDF 解析失败：'+err.message+'（扫描版图片 PDF 无法提取）'; }
+}
+function splitByChapters(text){
+  const re=/第[一二三四五六七八九十百千零两0-9]+[章节单元]/g;
+  const matches=[...text.matchAll(re)];
+  if(!matches.length){ return [{title:document.getElementById('m-title').value.trim()||'整本教材', content:text.trim()}]; }
+  const segs=[];
+  for(let i=0;i<matches.length;i++){
+    const start=matches[i].index;
+    const end=(i+1<matches.length)?matches[i+1].index:text.length;
+    const head=matches[i][0];
+    const after=text.slice(start+head.length, start+head.length+40).replace(/\s+/g,' ').trim();
+    const title=(head+(after?'：'+after:'')).slice(0,46);
+    segs.push({title:title, content:text.slice(start,end).trim()});
+  }
+  return segs;
+}
+function renderPDFPreview(chapters){
+  pendingChapters=chapters;
+  const box=document.getElementById('pdf-preview');
+  box.style.display='block';
+  box.innerHTML='<h3>📑 检测到以下章节，勾选后保存到「'+(curPath||'根目录')+'」</h3>'+
+    chapters.map((c,i)=>`<label class="chk" style="display:flex;gap:8px;font-size:13.5px;padding:6px 2px"><input type="checkbox" checked data-i="${i}"> <b>${esc(c.title)}</b> <span style="color:var(--sub)">（${c.content.length} 字）</span></label>`).join('')+
+    '<div class="btns" style="margin-top:10px"><button class="btn" onclick="saveSelectedChapters()">保存所选章节</button></div>';
+}
+function saveSelectedChapters(){
+  const boxes=document.querySelectorAll('#pdf-preview input[type=checkbox]');
+  let n=0;
+  boxes.forEach(b=>{ if(b.checked){ const c=pendingChapters[+b.dataset.i]; MAT.push({id:'m'+Date.now()+'_'+n, title:c.title, content:c.content, kind:'file', subject:curPath, funcs:''}); n++; } });
+  if(n){ saveAll(); render(); }
+  document.getElementById('pdf-preview').style.display='none';
+  document.getElementById('up-status').textContent='已保存 '+n+' 个章节 ✓';
+}
+
+// ===== 第三方脚本加载 =====
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script'); s.src=src;
+    s.onload=()=>res(); s.onerror=()=>rej(new Error('脚本加载失败：'+src));
+    document.head.appendChild(s);
+  });
+}
+
+// ===== 文件查看 / 关联 =====
+function openView(id){
+  const m=MAT.find(x=>x.id===id); if(!m) return;
+  viewId=id;
+  document.getElementById('v-title').textContent=m.title;
+  document.getElementById('v-body').textContent=m.content;
+  const defs=[{k:'vocab',t:'词汇测评',c:''},{k:'poem',t:'古诗背诵',c:'poem'},{k:'ref',t:'通用参考资料',c:'ref'}];
+  document.getElementById('v-funcs').innerHTML=defs.map(d=>
+    `<span class="fchip ${hasFunc(m,d.k)?'on '+d.c:''}" onclick="toggleFunc('${d.k}',this)">${d.t}</span>`).join('');
+  document.getElementById('mask-view').classList.add('show');
+}
+function closeView(){ document.getElementById('mask-view').classList.remove('show'); viewId=null; }
+function toggleFunc(k,el){
+  const m=MAT.find(x=>x.id===viewId); if(!m) return;
+  let arr=(m.funcs?m.funcs.split(',').filter(Boolean):[]);
+  if(arr.includes(k)) arr=arr.filter(x=>x!==k); else arr.push(k);
+  m.funcs=arr.join(',');
+  const c = k==='vocab'?'':k;
+  el.classList.toggle('on'); el.classList.toggle(c);
+  saveAll(); render();
+}
+function delCurrent(){
+  if(!viewId) return;
+  if(!confirm('确定删除此文件？')) return;
+  MAT=MAT.filter(m=>m.id!==viewId);
+  saveAll(); closeView(); render();
+}
+
+// ===== 删除文件夹（级联删除其下所有内容）=====
+function delFolder(name){
+  const full = curPath? curPath+'/'+name : name;
+  if(!confirm('删除文件夹「'+name+'」及其下所有资料？')) return;
+  MAT=MAT.filter(m=>{ const p=itemPath(m); return !(p===full || p.startsWith(full+'/')); });
+  saveAll(); render(); showToast('已删除文件夹');
+}
+
+// ===== 云端开关 =====
+function toggleCloud(el){
+  CLOUD_ON=el.checked; localStorage.setItem('admin_cloud', CLOUD_ON?'1':'0');
+  const st=document.getElementById('cloud-status');
+  if(CLOUD_ON){
+    st.textContent='☁️ 正在连接云端…';
+    pullAndMerge().then(()=>{ st.textContent='☁️ 已同步（本机 '+MAT.length+' 条）'; })
+      .catch(e=>{ st.textContent='☁️ 连接失败：'+e.message; el.checked=false; CLOUD_ON=false; localStorage.setItem('admin_cloud','0'); });
+  }else{ st.textContent='已关闭云端，仅本机'; }
+}
+
+// ===== 初始化 =====
+document.getElementById('cloud-toggle').checked=CLOUD_ON;
+render();
+if(CLOUD_ON){
+  const st=document.getElementById('cloud-status');
+  st.textContent='☁️ 正在从云端拉取…';
+  pullAndMerge().then(()=>{ st.textContent='☁️ 已同步（本机 '+MAT.length+' 条）'; })
+    .catch(e=>{ st.textContent='☁️ 拉取失败：'+e.message; });
+}
+</script>
+</body>
+</html>

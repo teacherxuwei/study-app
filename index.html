@@ -92,6 +92,10 @@
   .mat-t{font-weight:700;font-size:14px;flex:1 1 100%;}
   .mat-s{font-size:12px;color:var(--sub);flex:1;}
   .mat-del{background:#fef2f2;color:#b91c1c;border:none;border-radius:8px;padding:6px 10px;font-size:12px;}
+  .crumb{font-size:13px;font-weight:700;color:var(--brand);padding:4px 2px 10px;display:flex;flex-wrap:wrap;gap:2px;align-items:center;}
+  .crumb .bc{cursor:pointer;}
+  .crumb .bc-sep{color:var(--sub);margin:0 2px;}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;background:#eef3ff;color:var(--brand);margin-left:4px;}
   .chk{display:flex;align-items:center;gap:8px;font-size:13.5px;padding:6px 2px;}
   .chk input{width:18px;height:18px;}
   .filein{font-size:12px;color:var(--sub);margin-top:6px;line-height:1.9;}
@@ -208,8 +212,8 @@
   <div class="sheet">
     <div class="sheet-wrap">
       <button class="close" onclick="closeMats()">×</button>
-      <h3>📚 资料库</h3>
-      <p class="sub">导入教材章节 / 复习提纲 / 课堂笔记。仅存本机，答题时可勾选作为依据。</p>
+      <h3>📚 资料库（只读）</h3>
+      <p class="sub">资料的<b>上传、建文件夹、关联功能</b>请在独立的「资料管理后台」完成。这里仅查看已同步的资料与功能关联。</p>
       <div id="mat-list"></div>
 
       <div id="cloud-bar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;padding:8px 10px;background:#eef2ff;border-radius:10px">
@@ -219,27 +223,18 @@
         <span id="cloud-status" class="statusline"></span>
       </div>
 
-      <div class="field" style="margin-top:14px;border-top:1px dashed var(--line);padding-top:12px">
-        <label>添加资料</label>
-        <input id="mat-title" placeholder="标题，如：七下数学-二元一次方程组">
-        <textarea id="mat-content" placeholder="把教材内容或笔记粘贴到这里（建议控制在一章/一节）" style="margin-top:8px"></textarea>
-        <div class="filein">
-          从文件导入（.txt / .md）：<input id="mat-file" type="file" accept=".txt,.md"><br>
-          <button class="mini" onclick="document.getElementById('ocr-img').click()">📷 拍照 / 选图转文字</button>
-          <input id="ocr-img" type="file" accept="image/*" capture="environment" style="display:none">
-          <span id="ocr-status" class="statusline"></span><br>
-          <button class="mini" onclick="document.getElementById('mat-pdf').click()">📑 整本 PDF 按章节拆分</button>
-          <input id="mat-pdf" type="file" accept=".pdf" style="display:none">
-          <span id="pdf-status" class="statusline"></span>
-          <br>
-          <button class="mini" id="ai-format-btn" onclick="aiFormatMat()">✨ AI 整理资料格式</button>
-          <span id="ai-status" class="statusline"></span>
-        </div>
-        <div class="btns" style="margin-top:10px"><button class="btn" onclick="addMat()">保存到资料库</button></div>
-        <p class="filein" style="margin-top:8px">提示：📷 适合拍一页教材/笔记直接变文字；📑 适合整本电子课本，自动按「第X章/节/单元」切成多条资料。扫描版（纯图片）PDF 无法自动提取，请改用拍照识别或手动粘贴。</p>
-      </div>
+      <p class="filein" style="margin-top:10px">👉 打开 <a href="manage.html">资料管理后台</a> 上传资料、建「英语 / 词汇」这类目录，并关联到「词汇测评 / 古诗背诵 / 通用参考」。</p>
+    </div>
+  </div>
+</div>
 
-      <div id="pdf-preview" style="display:none;border-top:1px dashed var(--line);padding-top:12px"></div>
+<div class="mask" id="mask-view">
+  <div class="sheet" style="max-height:86vh">
+    <div class="sheet-wrap">
+      <button class="close" onclick="document.getElementById('mask-view').classList.remove('show')">×</button>
+      <h3 id="v-title">标题</h3>
+      <div class="ans" id="v-body" style="max-height:60vh;overflow-y:auto"></div>
+      <p class="sub" style="margin-top:12px">关联的功能会显示在上方标签；如需修改，请在「资料管理后台」打开该文件调整。</p>
     </div>
   </div>
 </div>
@@ -320,12 +315,12 @@ function sbHead(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Cont
 async function sbLoadAll(){
   const r=await fetch(SB_URL+'/rest/v1/materials?select=*&order=created_at.asc',{headers:sbHead()});
   if(!r.ok) throw new Error('读取失败 '+r.status);
-  return (await r.json()).map(x=>({id:x.id,title:x.title,content:x.content}));
+  return (await r.json()).map(x=>({id:x.id,title:x.title,content:x.content,subject:x.subject||'',kind:x.kind||'file',funcs:x.funcs||''}));
 }
 async function sbUpsert(m){
   const r=await fetch(SB_URL+'/rest/v1/materials?on_conflict=id',{method:'POST',
     headers:Object.assign(sbHead(),{'Prefer':'resolution=merge-duplicates'}),
-    body:JSON.stringify([{id:m.id,title:m.title,content:m.content,subject:'',space:'default'}])});
+    body:JSON.stringify([{id:m.id,title:m.title,content:m.content,subject:m.subject||'',kind:m.kind||'file',funcs:m.funcs||''}])});
   if(!r.ok) throw new Error('写入失败 '+r.status);
 }
 async function sbDelete(id){
@@ -343,6 +338,24 @@ async function pullAndMerge(){
 }
 let selMatIds=new Set();
 let pendingChapters=[];
+
+// ===== 资料文件夹树（任意深度）辅助 =====
+let curPath='';
+function setPath(p){ curPath=p; renderMatList(); }
+function drill(name){ curPath = curPath? curPath+'/'+name : name; renderMatList(); }
+function allFiles(){ return MATERIALS.filter(m=>(!m.kind||m.kind==='file')); }
+function hasFunc(m,f){ return m.funcs? m.funcs.split(',').includes(f):false; }
+function funcBadges(m){
+  const map={vocab:'词',poem:'诗',ref:'参'};
+  let s=''; ['vocab','poem','ref'].forEach(k=>{ if(hasFunc(m,k)) s+=' <span class="tag">'+map[k]+'</span>'; });
+  return s||'<span class="tag" style="opacity:.5">未关联</span>';
+}
+function openFileView(id){
+  const m=MATERIALS.find(x=>x.id===id); if(!m) return;
+  document.getElementById('v-title').textContent=m.title;
+  document.getElementById('v-body').textContent=m.content;
+  document.getElementById('mask-view').classList.add('show');
+}
 
 // render subjects
 const subsEl=document.getElementById('subs');
@@ -398,13 +411,15 @@ function openSheet(t){
   }
   // 资料勾选区
   const mb=document.getElementById('m-mats');
-  if(MATERIALS.length){
+  const files=allFiles();
+  if(files.length){
     mb.style.display='block';
-    mb.innerHTML='<div class="field"><label>参考资料（可选，勾选后 AI 将严格依据这些资料作答）</label>'+
-      MATERIALS.map(m=>`<label class="chk"><input type="checkbox" value="${m.id}" onchange="toggleMat(this)"> ${esc(m.title)}</label>`).join('')+'</div>';
+    const anyRef=files.some(m=>hasFunc(m,'ref'));
+    mb.innerHTML='<div class="field"><label>参考资料（已自动勾选关联到「通用参考」的资料；勾选后 AI 将严格依据这些资料作答）</label>'+
+      files.map(m=>`<label class="chk"><input type="checkbox" value="${m.id}" onchange="toggleMat(this)" ${ (anyRef? hasFunc(m,'ref') : true) ? 'checked':''}> ${esc(m.title)}</label>`).join('')+'</div>';
   }else{
     mb.style.display='block';
-    mb.innerHTML='<div class="sub">还没有资料，点右上角 📚 添加教材/笔记（答题时可基于它们）。</div>';
+    mb.innerHTML='<div class="sub">还没有资料，打开「资料管理后台」添加教材/笔记并关联到「通用参考」（答题时可基于它们）。</div>';
   }
   const ab=document.getElementById('m-answer');
   ab.style.display='none'; ab.innerHTML='';
@@ -489,6 +504,7 @@ function saveSettings(){
 // 资料库
 function openMats(){
   document.getElementById('cloud-toggle').checked=CLOUD_ON;
+  curPath='';
   renderMatList();
   document.getElementById('mask-mat').classList.add('show');
   if(CLOUD_ON){
@@ -513,10 +529,18 @@ function toggleCloud(el){
 }
 function renderMatList(){
   const list=document.getElementById('mat-list');
-  if(!MATERIALS.length){ list.innerHTML='<p class="sub">还没有资料，下面添加一份。</p>'; return; }
-  list.innerHTML=MATERIALS.map(m=>`<div class="mat"><div class="mat-t">${esc(m.title)}</div>
-    <div class="mat-s">${esc(m.content.slice(0,50))}${m.content.length>50?'…':''}</div>
-    <button class="mat-del" onclick="delMat('${m.id}')">删除</button></div>`).join('');
+  if(!MATERIALS.length){ list.innerHTML='<p class="sub">还没有资料。请打开「资料管理后台」上传并整理资料。</p>'; return; }
+  const segs=(curPath?curPath.split('/'):[]);
+  let crumb='<span class="bc" onclick="setPath(\'\')">📚 根</span>';
+  let acc='';
+  segs.forEach(s=>{ acc=acc?acc+'/'+s:s; crumb+=' <span class="bc-sep">/</span> <span class="bc" onclick="setPath(\''+esc(acc)+'\')">'+esc(s)+'</span>'; });
+  let html='<div class="crumb">'+crumb+'</div>';
+  const folders=MATERIALS.filter(m=>m.kind==='folder'&&(m.subject||'')===curPath);
+  const files=allFiles().filter(m=>(m.subject||'')===curPath);
+  if(!folders.length && !files.length){ html+='<p class="sub">此文件夹为空。</p>'; }
+  folders.forEach(f=>{ html+='<div class="mat"><div class="mat-t">📁 '+esc(f.title)+'</div><button class="mat-del" style="background:#eef3ff;color:var(--brand)" onclick="drill(\''+esc(f.title)+'\')">打开</button></div>'; });
+  files.forEach(f=>{ html+='<div class="mat"><div class="mat-t">📄 '+esc(f.title)+'</div><div class="mat-s">'+funcBadges(f)+'</div><button class="mat-del" style="background:#eef3ff;color:var(--brand)" onclick="openFileView(\''+f.id+'\')">查看</button></div>'; });
+  list.innerHTML=html;
 }
 function delMat(id){
   MATERIALS=MATERIALS.filter(m=>m.id!==id);
@@ -568,12 +592,7 @@ function loadScript(src){
   });
 }
 
-// ===== 功能A：拍照转文字（Tesseract.js OCR，中文）=====
-document.getElementById('ocr-img').addEventListener('change',e=>{
-  const file=e.target.files[0];
-  if(file) doOCR(file);
-  e.target.value='';
-});
+// 拍照/OCR 与 PDF 拆分、AI 整理、添加资料 已移到「资料管理后台」(manage.html)
 async function doOCR(file){
   const st=document.getElementById('ocr-status');
   try{
@@ -653,12 +672,7 @@ document.getElementById('photo-img').addEventListener('change',e=>{
   })();
 });
 
-// ===== 功能B：整本 PDF 按章节自动拆分（pdf.js）=====
-document.getElementById('mat-pdf').addEventListener('change',e=>{
-  const file=e.target.files[0];
-  if(file) doPDF(file);
-  e.target.value='';
-});
+// PDF 拆分功能已移到「资料管理后台」(manage.html)
 async function doPDF(file){
   const st=document.getElementById('pdf-status');
   try{
@@ -729,11 +743,13 @@ function saveSelectedChapters(){
 let vocabPool=[], vocabQ=[], vocabIdx=0, vocabMode='en2zh', vocabRight=0, vocabWrong=[];
 function openVocab(){
   const mb=document.getElementById('v-mats');
-  if(!MATERIALS.length){
-    mb.innerHTML='<p class="sub">还没有资料。请先在 📚 里添加「单词本」：每行一个，格式 <b>英文 中文</b>（如 <b>apple 苹果</b>）。也可「拍照转文字」拍下单词表自动识别。</p>';
+  const files=allFiles();
+  if(!files.length){
+    mb.innerHTML='<p class="sub">还没有资料。请打开「资料管理后台」上传单词本（每行「英文 中文」，如 <b>apple 苹果</b>），并关联到「词汇测评」。</p>';
   }else{
-    mb.innerHTML='<div class="field"><label>选择单词本（默认全选，可取消不需要的）</label>'+
-      MATERIALS.map(m=>`<label class="chk"><input type="checkbox" class="vmat" value="${m.id}" checked> ${esc(m.title)}</label>`).join('')+'</div>';
+    const anyAssoc=files.some(m=>hasFunc(m,'vocab'));
+    mb.innerHTML='<div class="field"><label>选择单词本（已自动勾选关联到「词汇测评」的资料）</label>'+
+      files.map(m=>`<label class="chk"><input type="checkbox" class="vmat" value="${m.id}" ${ (anyAssoc? hasFunc(m,'vocab') : true) ? 'checked':''}> ${esc(m.title)}</label>`).join('')+'</div>';
   }
   document.getElementById('v-count').value=10;
   document.getElementById('v-mode').value='en2zh';
@@ -756,7 +772,7 @@ function parseVocab(text){
 function startVocab(){
   const sel=[...document.querySelectorAll('.vmat:checked')].map(c=>c.value);
   if(!sel.length){ showToast('请先勾选至少一个单词本'); return; }
-  let text=''; MATERIALS.filter(m=>sel.includes(m.id)).forEach(m=>text+='\n'+m.content);
+  let text=''; allFiles().filter(m=>sel.includes(m.id)).forEach(m=>text+='\n'+m.content);
   vocabPool=parseVocab(text);
   if(!vocabPool.length){ showToast('没解析到单词，请确认格式为「英文 中文」'); return; }
   const n=Math.min(parseInt(document.getElementById('v-count').value)||10, vocabPool.length);
@@ -795,11 +811,13 @@ function judgeV(right){ if(right) vocabRight++; else vocabWrong.push(vocabQ[voca
 let poemList=[], poemIdx=0, poemHidden=false;
 function openPoem(){
   const mb=document.getElementById('p-mats');
-  if(!MATERIALS.length){
-    mb.innerHTML='<p class="sub">还没有资料。请先在 📚 里添加古诗资料：建议每首之间空一行，第一行写诗名（如《静夜思》）。</p>';
+  const files=allFiles();
+  if(!files.length){
+    mb.innerHTML='<p class="sub">还没有资料。请打开「资料管理后台」添加古诗资料（每首之间空一行、首行写诗名），并关联到「古诗背诵」。</p>';
   }else{
-    mb.innerHTML='<div class="field"><label>选择古诗来源（勾选要提取的资料，默认全选）</label>'+
-      MATERIALS.map(m=>`<label class="chk"><input type="checkbox" class="pmat" value="${m.id}" checked> ${esc(m.title)}</label>`).join('')+'</div>';
+    const anyAssoc=files.some(m=>hasFunc(m,'poem'));
+    mb.innerHTML='<div class="field"><label>选择古诗来源（已自动勾选关联到「古诗背诵」的资料）</label>'+
+      files.map(m=>`<label class="chk"><input type="checkbox" class="pmat" value="${m.id}" ${ (anyAssoc? hasFunc(m,'poem') : true) ? 'checked':''}> ${esc(m.title)}</label>`).join('')+'</div>';
   }
   document.getElementById('p-read').style.display='none';
   document.getElementById('p-setup').style.display='block';
@@ -847,7 +865,7 @@ function parsePoems(text){
 function startPoem(){
   const sel=[...document.querySelectorAll('.pmat:checked')].map(c=>c.value);
   if(!sel.length){ showToast('请先勾选至少一个古诗来源'); return; }
-  let text=''; MATERIALS.filter(m=>sel.includes(m.id)).forEach(m=>text+='\n\n'+m.content);
+  let text=''; allFiles().filter(m=>sel.includes(m.id)).forEach(m=>text+='\n\n'+m.content);
   poemList=parsePoems(text);
   if(!poemList.length){ showToast('没提取到古诗，请确认资料里每首之间空一行、首行写诗名'); return; }
   poemIdx=0; poemHidden=false;
