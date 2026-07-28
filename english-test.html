@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>七上英语·水平诊断测试</title>
+<style>
+  :root{
+    --brand:#2563eb; --brand2:#7c3aed; --bg:#f5f7fb; --card:#fff;
+    --line:#e5e9f2; --sub:#64748b; --ok:#16a34a; --bad:#dc2626; --warn:#d97706;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:#1e293b;line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:720px;margin:0 auto;padding:16px 14px 60px}
+  header{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;border-radius:18px;padding:20px 18px;box-shadow:0 8px 24px rgba(37,99,235,.25)}
+  header h1{margin:0 0 4px;font-size:21px}
+  header p{margin:0;font-size:13px;opacity:.92}
+  .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .chip{background:rgba(255,255,255,.18);padding:4px 10px;border-radius:999px;font-size:12px}
+  .sec-t{font-size:15px;font-weight:800;margin:22px 4px 10px;color:#334155;display:flex;align-items:center;gap:8px}
+  .sec-t .n{background:var(--brand);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+  .q{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 14px 10px;margin-bottom:12px;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+  .q-h{font-size:14px;font-weight:700;margin-bottom:4px}
+  .q-h .tag{font-size:11px;font-weight:600;color:var(--brand);background:#eef2ff;padding:1px 8px;border-radius:999px;margin-left:6px}
+  .q-b{font-size:14px;margin:6px 0 10px;color:#334155}
+  .opt{display:block;width:100%;text-align:left;background:#f8fafc;border:1.5px solid var(--line);border-radius:11px;
+    padding:10px 12px;margin:7px 0;font-size:14px;color:#334155;cursor:pointer;transition:.15s}
+  .opt:active{transform:scale(.99)}
+  .opt.sel{border-color:var(--brand);background:#eff6ff;color:var(--brand);font-weight:600}
+  .opt.correct{border-color:var(--ok);background:#ecfdf5;color:var(--ok);font-weight:700}
+  .opt.wrong{border-color:var(--bad);background:#fef2f2;color:var(--bad);font-weight:700}
+  .opt .k{display:inline-block;width:20px;color:var(--sub);font-weight:700}
+  .opt.sel .k,.opt.correct .k,.opt.wrong .k{color:inherit}
+  .exp{font-size:12.5px;color:var(--sub);background:#f8fafc;border-radius:10px;padding:8px 10px;margin-top:6px;display:none}
+  .exp.show{display:block}
+  .exp b{color:#334155}
+  .btn{display:block;width:100%;border:none;border-radius:14px;padding:15px;font-size:16px;font-weight:800;color:#fff;
+    background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 18px rgba(37,99,235,.3);cursor:pointer;margin-top:18px}
+  .btn:active{transform:scale(.99)}
+  .btn.ghost{background:#eef2ff;color:var(--brand);box-shadow:none}
+  /* result */
+  .res{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 18px;margin-top:18px;box-shadow:0 8px 28px rgba(15,23,42,.08)}
+  .score{text-align:center}
+  .score .num{font-size:54px;font-weight:900;line-height:1}
+  .level{display:inline-block;margin-top:8px;padding:5px 16px;border-radius:999px;font-weight:800;font-size:15px;color:#fff}
+  .bar{height:10px;background:#eef2f7;border-radius:999px;margin:16px 0 6px;overflow:hidden}
+  .bar>i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+  .sum{font-size:13.5px;color:var(--sub);text-align:center;margin-top:4px}
+  .weak{margin-top:18px}
+  .weak h3{font-size:14px;margin:0 0 8px}
+  .wrow{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:13px}
+  .wrow .lbl{width:130px;flex:none}
+  .wrow .wb{flex:1;height:8px;background:#eef2f7;border-radius:999px;overflow:hidden}
+  .wrow .wb>i{display:block;height:100%;background:var(--warn)}
+  .wrow .pc{width:42px;text-align:right;color:var(--sub);flex:none}
+  .adv{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 14px;margin-top:16px;font-size:13px;color:#92400e}
+  .adv b{color:#78350f}
+  .foot{font-size:11.5px;color:#94a3b8;text-align:center;margin-top:22px;line-height:1.7}
+  .toast{position:fixed;left:50%;top:24px;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;z-index:50}
+  .toast.show{opacity:1}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>七上英语 · 水平诊断测试</h1>
+    <p>依据《七年级上册英语知识梳理》全册出题，测一测孩子的真实水平</p>
+    <div class="meta">
+      <span class="chip">共 43 题</span>
+      <span class="chip">满分 100</span>
+      <span class="chip">覆盖 Starter 1-3 + Unit 1-7</span>
+      <span class="chip">手机可答 · 自动判分</span>
+    </div>
+  </header>
+
+  <div id="quiz"></div>
+
+  <button class="btn" id="submitBtn" onclick="grade()">提交并查看成绩 ▶</button>
+  <button class="btn ghost hide" id="retryBtn" onclick="location.reload()">再做一次</button>
+
+  <div id="result" class="hide"></div>
+
+  <div class="foot">
+    本测试题目由教材重点词组 / 句型 / 语法点整理生成，仅供家庭自测参考。<br>
+    建议孩子独立作答，再对照解析订正，效果最好。
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* 题目数据：unit 标记薄弱项归属 */
+const SECTIONS = [
+  {title:"一、词汇翻译（中译英）", items:[
+    {u:"Starter 1", q:"“早上好。”正确的英文是？", b:"", opts:["Good morning.","Good evening.","Good night.","Good afternoon."], a:0},
+    {u:"Starter 2", q:"“保持你的房间整洁”正确的英文是？", b:"", opts:["keep your room tidy","clean you room","tidy you bed","keep you book"], a:0},
+    {u:"Starter 3", q:"“在农场上”正确的英文是？", b:"", opts:["on the farm","in the farm","at the farm","under the farm"], a:0},
+    {u:"Unit 1", q:"“交朋友”正确的英文是？", b:"", opts:["make friends","do friends","get friend","have a friend"], a:0},
+    {u:"Unit 2", q:"“大量；许多”正确的英文是？", b:"", opts:["lots of / a lot of","a lot","lot of","many of"], a:0},
+    {u:"Unit 3", q:"“在……前面”正确的英文是？", b:"", opts:["in front of","in the front of","before of","at front"], a:0},
+    {u:"Unit 4", q:"“擅长”正确的英文是？", b:"", opts:["be good at","be good with","be good for","be good to"], a:0},
+    {u:"Unit 5", q:"“下中国象棋”正确的英文是？", b:"", opts:["play Chinese chess","play the Chinese chess","play a Chinese chess","playing Chinese chess"], a:0},
+    {u:"Unit 6", q:"“刷牙”正确的英文是？", b:"", opts:["brush one's teeth","brush the teeth","brush teeths","clean tooth"], a:0},
+    {u:"Unit 7", q:"“许愿”正确的英文是？", b:"", opts:["make a wish","make wish","do a wish","have a wish"], a:0},
+  ]},
+  {title:"二、语法单选", items:[
+    {u:"Unit 1", q:"I ___ a student.", b:"", opts:["am","is","are","be"], a:0, exp:"第一人称 I 后用 am。"},
+    {u:"Unit 1", q:"This is ___ book.（我的）", b:"", opts:["my","I","me","mine"], a:0, exp:"形容词性物主代词 my 修饰名词 book。"},
+    {u:"Unit 2", q:"He ___ TV every day.", b:"", opts:["watches","watch","watching","watchs"], a:0, exp:"第三人称单数，watch 以 ch 结尾加 -es。"},
+    {u:"Unit 2", q:"She ___ like apples.", b:"", opts:["doesn't","don't","isn't","aren't"], a:0, exp:"无 be 动词/情态动词，三单否定用 doesn't + 动词原形。"},
+    {u:"Unit 2", q:"Lucy's and Lily's ___ are on the desk.（分别所有）", b:"", opts:["bags","bag","a bag","bag's"], a:0, exp:"两人分别所有，两个名词都加 's，其后名词用复数。"},
+    {u:"Unit 3", q:"There ___ a sofa and two desks in the room.", b:"", opts:["is","are","be","am"], a:0, exp:"there be 就近原则，靠近的 a sofa 为单数，用 is。"},
+    {u:"Unit 3", q:"The book is ___ the desk.（在桌面上）", b:"", opts:["on","in","under","at"], a:0, exp:"on 表示“在……表面上面”，与物体表面接触。"},
+    {u:"Unit 7", q:"October is the ___ month of a year.", b:"", opts:["tenth","ten","tenst","tenthly"], a:0, exp:"序数词 tenth  tenth = 第十。"},
+    {u:"Unit 7", q:"My birthday is ___ November 23rd.", b:"", opts:["on","in","at","for"], a:0, exp:"具体某一天前用介词 on。"},
+    {u:"Unit 6", q:"It's 6:45. 正确读法是？", b:"", opts:["a quarter to seven","a quarter past seven","half past six","six forty-five past"], a:0, exp:"超过半点用“差几分 to 下一小时”，6:45 = a quarter to seven。"},
+    {u:"Unit 5", q:"___ you speak English?", b:"", opts:["Can","Do","Are","Does"], a:0, exp:"表示“会/能”，用情态动词 Can，后接动词原形。"},
+    {u:"Unit 6", q:"He ___ gets up at 7:00.（频度副词）", b:"", opts:["usually","usual","is usual","be usual"], a:0, exp:"usually 为频度副词，用于实义动词之前。"},
+    {u:"Unit 5", q:"He can play ___ guitar.", b:"", opts:["the","a","an","/"], a:0, exp:"play 与乐器类连用，名词前必须加 the。"},
+    {u:"Unit 5", q:"Can you ___ English?", b:"", opts:["speak","say","talk","tell"], a:0, exp:"speak 后接语言，speak English 说英语。"},
+    {u:"Unit 4", q:"I like English ___ it's fun.", b:"", opts:["because","but","and","so"], a:0, exp:"because 表示原因，“因为”，句中 because 与 so 不连用。"},
+  ]},
+  {title:"三、句型转换 / 填空", items:[
+    {u:"Unit 1", q:"She is my sister.（变否定）\nShe ___ my sister.", b:"", opts:["isn't","don't","doesn't","aren't"], a:0, exp:"含 be 动词，否定在 is 后加 not → isn't。"},
+    {u:"Unit 2", q:"—Do you have a piano?\n—Yes, ___ .", b:"", opts:["I do","I have","I am","I don't"], a:0, exp:"用 do 问用 do 答，肯定回答 Yes, I do."},
+    {u:"Unit 3", q:"—Is there a clock on the desk?\n—No, ___ .", b:"", opts:["there isn't","it isn't","they aren't","isn't"], a:0, exp:"There be 疑问句，否定回答 No, there isn't."},
+    {u:"Unit 2", q:"My mother ___ (like) salad.", b:"", opts:["likes","like","liking","to like"], a:0, exp:"第三人称单数主语，动词 like 加 -s。"},
+    {u:"Unit 7", q:"March is the ___ month.", b:"", opts:["third","three","threeth","3rd's"], a:0, exp:"序数词第三为 third（1st/2nd/3rd 特殊记）。"},
+  ]},
+  {title:"四、完形填空（我的校园一天）", items:[
+    {u:"Unit 6", q:"Hello! I'm Li Hua. I ___ up at 6:30 every day.", b:"", opts:["get","gets","getting","got"], a:0, exp:"主语 I 用动词原形 get up。"},
+    {u:"Unit 6", q:"Then I ___ my teeth and have breakfast.", b:"", opts:["brush","brushes","brushing","to brush"], a:0, exp:"主语 I 用原形 brush；brush 三单为 brushes。"},
+    {u:"Unit 6", q:"I ___ to school by bike.", b:"", opts:["go","goes","going","to go"], a:0, exp:"主语 I 用原形 go。"},
+    {u:"Unit 6", q:"I have four ___ in the morning.", b:"", opts:["lessons","lesson","lessones","lesson's"], a:0, exp:"four 后接可数名词复数 lessons。"},
+    {u:"Unit 6", q:"After school I ___ football with my friends.", b:"", opts:["play","plays","playing","to play"], a:0, exp:"主语 I 用原形 play；play football 球类前不加 the。"},
+  ]},
+  {title:"五、阅读理解", items:[
+    {u:"Unit 4", q:"阅读：My name is Ella. My favourite subject is history because it's interesting. I don't like maths because it's difficult. My friend Peter likes PE because it's exciting.\n\nElla 最喜欢的学科是？", b:"", opts:["History","Maths","PE","English"], a:0, exp:"原文：My favourite subject is history."},
+    {u:"Unit 4", q:"Ella 为什么喜欢它？", b:"", opts:["It's interesting.","It's difficult.","It's exciting.","It's boring."], a:0, exp:"原文：because it's interesting."},
+    {u:"Unit 4", q:"Ella 喜欢数学吗？", b:"", opts:["No, she doesn't.","Yes, she does.","Yes, she is.","No, she isn't."], a:0, exp:"原文：I don't like maths."},
+    {u:"Unit 4", q:"Peter 为什么喜欢体育？", b:"", opts:["Because it's exciting.","Because it's difficult.","Because it's interesting.","Because it's boring."], a:0, exp:"原文：Peter likes PE because it's exciting."},
+    {u:"Unit 7", q:"阅读：Today is November 23rd. It's Helen's birthday. She has a birthday party at home. Her friends come. They sing the “Happy Birthday” song. Then Helen makes a wish and blows out the candles. Her mother makes long-life noodles with eggs for her.\n\nHelen 的生日是？", b:"", opts:["November 23rd","November 22nd","December 23rd","October 23rd"], a:0, exp:"原文：Today is November 23rd. It's Helen's birthday."},
+    {u:"Unit 7", q:"聚会上他们先做什么？", b:"", opts:["Sing the birthday song.","Make a wish.","Eat the cake.","Blow out candles."], a:0, exp:"原文：They sing the “Happy Birthday” song. Then ... 先唱歌。"},
+    {u:"Unit 7", q:"Helen 的妈妈为她做了什么？", b:"", opts:["Long-life noodles with eggs.","A big cake.","A birthday gift.","A surprise party."], a:0, exp:"原文：Her mother makes long-life noodles with eggs."},
+    {u:"Unit 7", q:"唱完歌后，Helen 做什么？", b:"", opts:["makes a wish and blows out candles","eats noodles","opens gifts","takes a photo"], a:0, exp:"原文：Then Helen makes a wish and blows out the candles."},
+  ]},
+];
+
+/* 渲染 */
+const answers = {};
+let qIndex = 0;
+const quizEl = document.getElementById('quiz');
+SECTIONS.forEach((sec, si)=>{
+  const st = document.createElement('div');
+  st.className='sec-t';
+  st.innerHTML = `<span class="n">${si+1}</span>${sec.title}`;
+  quizEl.appendChild(st);
+  sec.items.forEach((it, ii)=>{
+    qIndex++;
+    const qid = si+'-'+ii;
+    const q = document.createElement('div');
+    q.className='q';
+    let optsHtml = it.opts.map((o,ki)=>
+      `<button class="opt" id="o-${qid}-${ki}" onclick="pick('${qid}',${ki})"><span class="k">${String.fromCharCode(65+ki)}.</span>${esc(o)}</button>`
+    ).join('');
+    q.innerHTML = `<div class="q-h">第 ${qIndex} 题<span class="tag">${it.u}</span></div>`+
+      (it.b?`<div class="q-b">${esc(it.b)}</div>`:'')+
+      `<div class="q-b">${esc(it.q)}</div>`+
+      optsHtml+
+      `<div class="exp" id="exp-${qid}">${it.exp?('💡 '+esc(it.exp)):''}</div>`;
+    quizEl.appendChild(q);
+  });
+});
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+function pick(qid, ki){
+  const sec_q = qid.split('-'); const si=+sec_q[0], ii=+sec_q[1];
+  const it = SECTIONS[si].items[ii];
+  answers[qid]=ki;
+  for(let k=0;k<it.opts.length;k++){
+    document.getElementById('o-'+qid+'-'+k).classList.toggle('sel', k===ki);
+  }
+}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1300);}
+
+/* 判分 */
+function grade(){
+  const total = qIndex;
+  // 先校验是否全部作答
+  let unanswered = 0, firstUnanswered = null;
+  SECTIONS.forEach((sec,si)=>{
+    sec.items.forEach((it,ii)=>{
+      const qid=si+'-'+ii;
+      if(answers[qid]===undefined){ unanswered++; if(!firstUnanswered) firstUnanswered=qid; }
+    });
+  });
+  if(unanswered>0){
+    toast('还有 '+unanswered+' 题没答，请完成全部 '+total+' 题');
+    if(firstUnanswered){
+      const el=document.getElementById('o-'+firstUnanswered+'-0');
+      if(el) el.closest('.q').scrollIntoView({behavior:'smooth',block:'center'});
+    }
+    return;
+  }
+  let correct=0;
+  const wrongUnits = {};
+  const unitTotal = {};
+  SECTIONS.forEach((sec,si)=>{
+    sec.items.forEach((it,ii)=>{
+      const qid=si+'-'+ii;
+      unitTotal[it.u]=(unitTotal[it.u]||0)+1;
+      const chosen = answers[qid];
+      const opts = it.opts.map((o,ki)=>document.getElementById('o-'+qid+'-'+ki));
+      const expEl = document.getElementById('exp-'+qid);
+      opts[it.a].classList.add('correct');
+      if(chosen===it.a){ correct++; }
+      else { opts[chosen].classList.add('wrong'); wrongUnits[it.u]=(wrongUnits[it.u]||0)+1; }
+      expEl.classList.add('show');
+      opts.forEach(o=>o.onclick=null);
+    });
+  });
+  showResult(correct, total, wrongUnits, unitTotal);
+}
+
+function showResult(correct, total, wrongUnits, unitTotal){
+  const score = Math.round(correct/total*100);
+  let level, lvlColor, comment;
+  if(score>=90){level='优秀 A';lvlColor='var(--ok)';comment='七上英语掌握扎实，词汇与基础语法都过关，可挑战课外阅读与写作。';}
+  else if(score>=75){level='良好 B';lvlColor='var(--brand)';comment='基本达标，个别语法点需巩固。对照解析把错题库再刷一遍即可稳住。';}
+  else if(score>=60){level='合格 C';lvlColor='var(--warn)';comment='有薄弱单元，建议按下方“薄弱项”优先复习对应单元的重点词组与语法。';}
+  else {level='待提升 D';lvlColor='var(--bad)';comment='建议从 Starter Unit 与 be 动词、三单、there be 等基础语法重新抓起，先背熟词组再练题。';}
+
+  // 薄弱项排序
+  const rows = Object.keys(unitTotal).map(u=>({
+    u, total:unitTotal[u], wrong:wrongUnits[u]||0,
+    pc: unitTotal[u]? Math.round((wrongUnits[u]||0)/unitTotal[u]*100):0
+  })).sort((a,b)=>b.pc-a.pc);
+  const weakRows = rows.filter(r=>r.wrong>0).map(r=>
+    `<div class="wrow"><div class="lbl">${r.u}</div><div class="wb"><i style="width:${r.pc}%"></i></div><div class="pc">${r.wrong}/${r.total}</div></div>`
+  ).join('') || '<div class="sum">🎉 全单元零失误，非常棒！</div>';
+
+  let advice='';
+  const top = rows.find(r=>r.wrong>0);
+  if(top){
+    const map = {
+      'Starter 1':'复习字母表、元音字母与问候语（Good morning/afternoon/evening）。',
+      'Starter 2':'复习颜色词与介词 in/on/under，以及 What color/Where 问句。',
+      'Starter 3':'复习指示代词 this/that/these/those 与基数词 0-15。',
+      'Unit 1':'复习 be 动词（am/is/are）与形容词性物主代词。',
+      'Unit 2':'复习实义动词一般现在时、三单变化规则与名词所有格。',
+      'Unit 3':'复习 there be 句型（就近原则）与方位介词。',
+      'Unit 4':'复习 boring/bored、be good at/with/for、and/but/because 连词。',
+      'Unit 5':'复习情态动词 can、play 用法（球类/乐器）、speak/say/talk/tell。',
+      'Unit 6':'复习日常作息词汇、what time/when、时间表达法与频度副词。',
+      'Unit 7':'复习序数词、日期介词 on、How much 问价格与生日话题表达。'
+    };
+    advice = `<div class="adv"><b>📌 复习建议：</b>最薄弱的是 <b>${top.u}</b>（错 ${top.wrong}/${top.total}）。${map[top.u]||''}可在「学习小助手」资料库导入该单元重点，配合单词测验/古诗背诵同类方式滚动复习。</div>`;
+  }
+
+  const res = document.getElementById('result');
+  res.className='res';
+  res.innerHTML = `
+    <div class="score">
+      <div class="num" style="color:${lvlColor}">${score}</div>
+      <div class="level" style="background:${lvlColor}">${level}</div>
+      <div class="sum">答对 ${correct} / ${total} 题 · 满分 100</div>
+    </div>
+    <div class="bar"><i style="width:${score}%"></i></div>
+    <div class="sum">${comment}</div>
+    <div class="weak">
+      <h3>📊 各单元正确率（薄弱项排序）</h3>
+      ${weakRows}
+    </div>
+    ${advice}
+  `;
+  res.classList.remove('hide');
+  document.getElementById('submitBtn').classList.add('hide');
+  document.getElementById('retryBtn').classList.remove('hide');
+  res.scrollIntoView({behavior:'smooth',block:'start'});
+}
+</script>
+</body>
+</html>
