@@ -353,19 +353,30 @@ async function doPDF(file){
   }catch(err){ st.textContent='⚠️ PDF 解析失败：'+err.message+'（扫描版图片 PDF 无法提取）'; }
 }
 function splitByChapters(text){
-  const re=/第[一二三四五六七八九十百千零两0-9]+[章节单元]/g;
+  // 兼容：标题与数字之间可能有空格（如“第 1 节”）、中文/阿拉伯数字、章/节/单元/课/本
+  const re=/第\s*[一二三四五六七八九十百千零两0-9]+\s*[章节单元课本]/g;
   const matches=[...text.matchAll(re)];
   if(!matches.length){ return [{title:document.getElementById('m-title').value.trim()||'整本教材', content:text.trim()}]; }
-  const segs=[];
+  let segs=[];
   for(let i=0;i<matches.length;i++){
     const start=matches[i].index;
     const end=(i+1<matches.length)?matches[i+1].index:text.length;
-    const head=matches[i][0];
-    const after=text.slice(start+head.length, start+head.length+40).replace(/\s+/g,' ').trim();
+    const head=matches[i][0].replace(/\s+/g,'');
+    const after=text.slice(start+matches[i][0].length, start+matches[i][0].length+40).replace(/\s+/g,' ').trim();
     const title=(head+(after?'：'+after:'')).slice(0,46);
     segs.push({title:title, content:text.slice(start,end).trim()});
   }
-  return segs;
+  // 合并过短的“章标题段”到后一段（章标题本身几乎无正文，合并后节段带上章名，避免章节看起来缺失）
+  const merged=[];
+  for(const s of segs){
+    if(merged.length && s.content.length < 60){
+      merged[merged.length-1].content += '\n\n'+s.content;
+      merged[merged.length-1].title += ' / '+s.title;
+    } else {
+      merged.push(s);
+    }
+  }
+  return merged;
 }
 function renderPDFPreview(chapters){
   pendingChapters=chapters;
