@@ -158,7 +158,7 @@
   可<b>拍照转文字</b>、可<b>整本 PDF 自动按章节拆分</b>。答题时勾选对应资料，AI 就会<b>严格依据这些资料</b>讲解、出题。
 </div>
 
-<footer>v2026-07-28a · 本助手生成提问 + 直接调用大模型 · 资料仅存本机 · 可「添加到主屏幕」当 App 用</footer>
+<footer>v2026-07-28b · 本助手生成提问 + 直接调用大模型 · 资料仅存本机 · 可「添加到主屏幕」当 App 用</footer>
 
 <!-- 功能弹层 -->
 <div class="mask" id="mask">
@@ -872,10 +872,12 @@ document.getElementById('mask-vocab').addEventListener('click',e=>{if(e.target.i
 document.getElementById('mask-poem').addEventListener('click',e=>{if(e.target.id==='mask-poem')closePoem();});
 
 // ===== 入口：英语水平测试（全屏内嵌，与主 App 同域名共享 Key/历史）=====
+// ETEST_VER 每次升级测试页都需 +1，强制 iframe 重新拉取，绕过 iOS 主屏幕等顽固缓存
+const ETEST_VER='20260728b';
 function openEtest(){
   const f=document.getElementById('etest-frame');
   const ifr=document.getElementById('etest-iframe');
-  if(ifr.getAttribute('data-loaded')!=='1'){ ifr.src='english-test.html'; ifr.setAttribute('data-loaded','1'); }
+  ifr.src='english-test.html?v='+ETEST_VER;
   f.classList.add('show');
   document.body.style.overflow='hidden';
 }
