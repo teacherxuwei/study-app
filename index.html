@@ -225,6 +225,7 @@
       </div>
 
       <p class="filein" style="margin-top:10px">👉 打开 <a href="manage.html">资料管理后台</a> 上传资料、建「英语 / 词汇」这类目录，并关联到「词汇测评 / 古诗背诵 / 通用参考」。</p>
+      <button class="mini" style="margin-top:8px" onclick="if(confirm('清空本地浏览器缓存（资料与开关，保留 DeepSeek Key）？'))clearLocal()">🧹 清空本地数据</button>
     </div>
   </div>
 </div>
@@ -304,6 +305,13 @@ const TASKS = [
   {id:'auto',ic:'⏰',t:'每日复习',d:'设自动刷题',needAuto:true}
 ];
 let curSub='math', curTask=null, curData={};
+// ===== 清空本地数据（URL ?clear=1 自动触发；按钮调用 clearLocal；保留 ds_key/ds_model）=====
+function clearLocal(){
+  ['materials','admin_materials','mat_cloud','admin_cloud','etest_history','etest_key'].forEach(k=>localStorage.removeItem(k));
+  if(typeof showToast==='function') showToast('本地数据已清空');
+  setTimeout(()=>{ const u=location.pathname+(location.search||'').replace(/[?&]clear=1/,''); location.href=u; }, 600);
+}
+if(new URLSearchParams(location.search).get('clear')==='1'){ clearLocal(); }
 let API_KEY=localStorage.getItem('ds_key')||'';
 let MODEL=localStorage.getItem('ds_model')||'deepseek-chat';
 let MATERIALS=JSON.parse(localStorage.getItem('materials')||'[]');

@@ -112,6 +112,7 @@
     <button class="mini" onclick="document.getElementById('m-ocr').click()">📷 拍照/图片转文字</button>
     <button class="mini" onclick="document.getElementById('m-pdf').click()">📑 整本PDF拆章节</button>
     <button class="mini" onclick="document.getElementById('m-book').click()">📚 上传教材(PDF)</button>
+    <button class="mini" onclick="if(confirm('清空本地浏览器缓存（资料与开关，保留 DeepSeek Key）？'))clearLocal()">🧹 清空本地</button>
     <input id="m-file" type="file" accept=".txt,.md" style="display:none">
     <input id="m-ocr" type="file" accept="image/*" capture="environment" style="display:none">
     <input id="m-pdf" type="file" accept=".pdf" style="display:none">
@@ -164,6 +165,14 @@
 const SB_URL='https://ztjpfymhdssybowzxgni.supabase.co';
 const SB_KEY='sb_publishable_R2onapuvJugi-V18-l_vfg_lVztY-0b';
 function sbHead(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};}
+
+// ===== 清空本地数据（URL ?clear=1 自动触发；按钮调用 clearLocal；保留 ds_key/ds_model）=====
+function clearLocal(){
+  ['admin_materials','admin_cloud','materials','mat_cloud','etest_history','etest_key'].forEach(k=>localStorage.removeItem(k));
+  if(typeof showToast==='function') showToast('本地数据已清空');
+  setTimeout(()=>{ const u=location.pathname+(location.search||'').replace(/[?&]clear=1/,''); location.href=u; }, 600);
+}
+if(new URLSearchParams(location.search).get('clear')==='1'){ clearLocal(); }
 
 // ===== 本地缓存 =====
 let MAT=JSON.parse(localStorage.getItem('admin_materials')||'[]');
