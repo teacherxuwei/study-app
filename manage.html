@@ -353,29 +353,45 @@ async function doPDF(file){
   }catch(err){ st.textContent='⚠️ PDF 解析失败：'+err.message+'（扫描版图片 PDF 无法提取）'; }
 }
 function splitByChapters(text){
-  // 兼容：标题与数字之间可能有空格（如“第 1 节”）、中文/阿拉伯数字、章/节/单元/课/本
-  const re=/第\s*[一二三四五六七八九十百千零两0-9]+\s*[章节单元课本]/g;
-  const matches=[...text.matchAll(re)];
-  if(!matches.length){ return [{title:document.getElementById('m-title').value.trim()||'整本教材', content:text.trim()}]; }
+  // 中英文章节标题都支持：
+  //  中文：第X章/课本（一级）、第X节（二级）
+  //  英文：Starter（整区首页）、Unit N（仅单元首页，其后含 Section 才切，避免内页页眉每页切碎）、Section A/B、Lesson N（二级）
+  const pts=[];
+  const push=(re,type)=>{
+    for(const m of text.matchAll(re)){
+      if(type==='unit'){ const a=text.slice(m.index, m.index+300); if(!/Section/i.test(a)) continue; } // 只留单元首页
+      if(type==='starter'){ const a=text.slice(m.index, m.index+300); if(!/(Unit|Section)/i.test(a)) continue; }
+      pts.push({i:m.index, t:m[0].replace(/\s+/g,' ').trim()});
+    }
+  };
+  push(/第\s*[一二三四五六七八九十百千零两0-9]+\s*[章课本]/g,'cn1');
+  push(/第\s*[一二三四五六七八九十百千零两0-9]+\s*节/g,'cn2');
+  push(/\bStarter\b/gi,'starter');
+  push(/Unit\s+[0-9]+/gi,'unit');
+  push(/Section\s+[A-Z]/gi,'section');
+  push(/Lesson\s+[0-9]+/gi,'lesson');
+  if(!pts.length){ return [{title:document.getElementById('m-title').value.trim()||'整本教材', content:text.trim()}]; }
+  pts.sort((a,b)=>a.i-b.i);
   let segs=[];
-  for(let i=0;i<matches.length;i++){
-    const start=matches[i].index;
-    const end=(i+1<matches.length)?matches[i+1].index:text.length;
-    const head=matches[i][0].replace(/\s+/g,'');
-    const after=text.slice(start+matches[i][0].length, start+matches[i][0].length+40).replace(/\s+/g,' ').trim();
-    const title=(head+(after?'：'+after:'')).slice(0,46);
-    segs.push({title:title, content:text.slice(start,end).trim()});
+  for(let k=0;k<pts.length;k++){
+    const start=pts[k].i;
+    const end=(k+1<pts.length)?pts[k+1].i:text.length;
+    const next=text.slice(start, start+90).replace(/\s+/g,' ').trim();
+    segs.push({title:next.slice(0,50), content:text.slice(start,end).trim()});
   }
-  // 合并过短的“章标题段”到后一段（章标题本身几乎无正文，合并后节段带上章名，避免章节看起来缺失）
+  // 合并过短标题段（<60字）到相邻长段，避免空壳章节
   const merged=[];
+  let pending=null;
   for(const s of segs){
-    if(merged.length && s.content.length < 60){
-      merged[merged.length-1].content += '\n\n'+s.content;
-      merged[merged.length-1].title += ' / '+s.title;
+    if(s.content.length < 60){
+      if(merged.length){ merged[merged.length-1].content = s.content + '\n\n' + merged[merged.length-1].content; merged[merged.length-1].title = s.title + ' / ' + merged[merged.length-1].title; }
+      else { pending = pending ? pending+'\n\n'+s.content : s.content; }
     } else {
+      if(pending!==null){ s.content = pending + '\n\n' + s.content; pending=null; }
       merged.push(s);
     }
   }
+  if(pending!==null && merged.length){ merged[merged.length-1].content += '\n\n'+pending; }
   return merged;
 }
 function renderPDFPreview(chapters){
