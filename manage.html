@@ -187,10 +187,17 @@ async function sbLoadAll(){
   return (await r.json()).map(x=>({id:x.id,title:x.title,content:x.content,subject:x.subject||'',kind:x.kind||'file',funcs:x.funcs||''}));
 }
 async function sbUpsert(m){
-  const r=await fetch(SB_URL+'/rest/v1/materials?on_conflict=id',{method:'POST',
-    headers:Object.assign(sbHead(),{'Prefer':'resolution=merge-duplicates'}),
-    body:JSON.stringify([{id:m.id,title:m.title,content:m.content,subject:m.subject||'',kind:m.kind||'file',funcs:m.funcs||''}])});
-  if(!r.ok) throw new Error('写入失败 '+r.status);
+  const body=[{id:m.id,title:m.title,content:m.content,subject:m.subject||'',kind:m.kind||'file',funcs:m.funcs||''}];
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/materials?on_conflict=id',{method:'POST',
+      headers:Object.assign(sbHead(),{'Prefer':'resolution=merge-duplicates'}),body:JSON.stringify(body)});
+    if(!r.ok) throw new Error('写入失败 '+r.status);
+  }catch(e){
+    const r2=await fetch(SB_URL+'/rest/v1/materials?on_conflict=id',{method:'POST',
+      headers:Object.assign(sbHead(),{'Prefer':'resolution=merge-duplicates'}),
+      body:JSON.stringify([{id:m.id,title:m.title,content:m.content,subject:m.subject||''}])});
+    if(!r2.ok) throw new Error('写入失败 '+r2.status);
+  }
 }
 async function sbDelete(id){
   const r=await fetch(SB_URL+'/rest/v1/materials?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:sbHead()});
