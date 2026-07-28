@@ -345,7 +345,7 @@ async function doPDF(file){
       st.textContent='读取第 '+i+' / '+pdf.numPages+' 页…';
       const page=await pdf.getPage(i);
       const tc=await page.getTextContent();
-      full+='\n'+tc.items.map(it=>it.str).join('');
+      full+='\n'+tc.items.map(it=>it.str).join(' ');
     }
     const chapters=splitByChapters(full);
     st.textContent='识别到 '+chapters.length+' 段，请勾选保存：';
@@ -367,9 +367,9 @@ function splitByChapters(text){
   push(/第\s*[一二三四五六七八九十百千零两0-9]+\s*[章课本]/g,'cn1');
   push(/第\s*[一二三四五六七八九十百千零两0-9]+\s*节/g,'cn2');
   push(/\bStarter\b/gi,'starter');
-  push(/Unit\s+[0-9]+/gi,'unit');
-  push(/Section\s+[A-Z]/gi,'section');
-  push(/Lesson\s+[0-9]+/gi,'lesson');
+  push(/Unit\s*[0-9]+/gi,'unit');
+  push(/Section\s*[A-Z]/gi,'section');
+  push(/Lesson\s*[0-9]+/gi,'lesson');
   if(!pts.length){ return [{title:document.getElementById('m-title').value.trim()||'整本教材', content:text.trim()}]; }
   pts.sort((a,b)=>a.i-b.i);
   let segs=[];
