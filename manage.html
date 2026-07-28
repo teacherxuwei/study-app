@@ -111,9 +111,11 @@
     <button class="mini" onclick="document.getElementById('m-file').click()">📄 上传文件(.txt/.md)</button>
     <button class="mini" onclick="document.getElementById('m-ocr').click()">📷 拍照/图片转文字</button>
     <button class="mini" onclick="document.getElementById('m-pdf').click()">📑 整本PDF拆章节</button>
+    <button class="mini" onclick="document.getElementById('m-book').click()">📚 上传教材(PDF)</button>
     <input id="m-file" type="file" accept=".txt,.md" style="display:none">
     <input id="m-ocr" type="file" accept="image/*" capture="environment" style="display:none">
     <input id="m-pdf" type="file" accept=".pdf" style="display:none">
+    <input id="m-book" type="file" accept=".pdf" style="display:none">
   </div>
   <span id="up-status" class="statusline"></span>
 </div>
@@ -184,10 +186,10 @@ function hasFunc(m,f){ return m.funcs? m.funcs.split(',').includes(f):false; }
 async function sbLoadAll(){
   const r=await fetch(SB_URL+'/rest/v1/materials?select=*&order=created_at.asc',{headers:sbHead()});
   if(!r.ok) throw new Error('读取失败 '+r.status);
-  return (await r.json()).map(x=>({id:x.id,title:x.title,content:x.content,subject:x.subject||'',kind:x.kind||'file',funcs:x.funcs||''}));
+  return (await r.json()).map(x=>({id:x.id,title:x.title,content:x.content,subject:x.subject||'',kind:x.kind||'file',funcs:x.funcs||'',meta:x.meta||''}));
 }
 async function sbUpsert(m){
-  const body=[{id:m.id,title:m.title,content:m.content,subject:m.subject||'',kind:m.kind||'file',funcs:m.funcs||''}];
+  const body=[{id:m.id,title:m.title,content:m.content,subject:m.subject||'',kind:m.kind||'file',funcs:m.funcs||'',meta:m.meta||''}];
   try{
     const r=await fetch(SB_URL+'/rest/v1/materials?on_conflict=id',{method:'POST',
       headers:Object.assign(sbHead(),{'Prefer':'resolution=merge-duplicates'}),body:JSON.stringify(body)});
@@ -329,28 +331,81 @@ async function aiFormat(){
 document.getElementById('m-pdf').addEventListener('change',e=>{
   const file=e.target.files[0]; e.target.value=''; if(file) doPDF(file);
 });
-async function doPDF(file){
+document.getElementById('m-book').addEventListener('change',e=>{
+  const file=e.target.files[0]; e.target.value=''; if(file) genTextbookIndex(file);
+});
+async function extractPDF(file){
   const st=document.getElementById('up-status');
+  st.textContent='加载 PDF 解析器…';
+  if(!window.pdfjsLib){
+    await loadScript('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js');
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  }
+  st.textContent='解析中（大文件请稍候）…';
+  const buf=await file.arrayBuffer();
+  const pdf=await window.pdfjsLib.getDocument({data:buf}).promise;
+  let full='';
+  for(let i=1;i<=pdf.numPages;i++){
+    st.textContent='读取第 '+i+' / '+pdf.numPages+' 页…';
+    const page=await pdf.getPage(i);
+    const tc=await page.getTextContent();
+    full+='\n[[P'+i+']]\n'+tc.items.map(it=>it.str).join(' ');
+  }
+  return {full, pages:pdf.numPages};
+}
+// 整本 PDF 拆成多条普通资料（旧方式）
+async function doPDF(file){
   try{
-    st.textContent='加载 PDF 解析器…';
-    if(!window.pdfjsLib){
-      await loadScript('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js');
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-    }
-    st.textContent='解析中（大文件请稍候）…';
-    const buf=await file.arrayBuffer();
-    const pdf=await window.pdfjsLib.getDocument({data:buf}).promise;
-    let full='';
-    for(let i=1;i<=pdf.numPages;i++){
-      st.textContent='读取第 '+i+' / '+pdf.numPages+' 页…';
-      const page=await pdf.getPage(i);
-      const tc=await page.getTextContent();
-      full+='\n'+tc.items.map(it=>it.str).join(' ');
-    }
+    const {full}=await extractPDF(file);
     const chapters=splitByChapters(full);
+    const st=document.getElementById('up-status');
     st.textContent='识别到 '+chapters.length+' 段，请勾选保存：';
     renderPDFPreview(chapters);
-  }catch(err){ st.textContent='⚠️ PDF 解析失败：'+err.message+'（扫描版图片 PDF 无法提取）'; }
+  }catch(err){ document.getElementById('up-status').textContent='⚠️ PDF 解析失败：'+err.message+'（扫描版图片 PDF 无法提取）'; }
+}
+// 上传教材：校验 + 大模型生成章节索引（含页码），存为 kind='textbook'
+async function genTextbookIndex(file){
+  const st=document.getElementById('up-status');
+  const title=(document.getElementById('m-title').value.trim())||file.name.replace(/\.pdf$/i,'');
+  try{
+    const {full,pages}=await extractPDF(file);
+    const chapters=splitByChapters(full);
+    const textLen=full.replace(/\[\[P\d+\]\]/g,'').replace(/\s+/g,'').length;
+    if(chapters.length===0 || textLen<300){
+      st.textContent='⚠️ 未识别到规范章节（格式特殊/疑似扫描版），将直接交给大模型智能整理…';
+    }else{
+      st.textContent='✓ 校验通过：'+pages+' 页，识别到 '+chapters.length+' 个章节，正在生成索引…';
+    }
+    const frag=chapters.map(c=>{
+      const pg=pagesOf(c.content);
+      const head=c.content.replace(/\[\[P\d+\]\]/g,'').slice(0,200).replace(/\s+/g,' ').trim();
+      return '【'+c.title+'】 页码 '+pg.page_start+'-'+pg.page_end+'\n'+head;
+    }).join('\n\n');
+    const input = chapters.length? frag : full.replace(/\[\[P\d+\]\]/g,'').slice(0,6000);
+    if(!API_KEY){ const k=prompt('请粘贴 DeepSeek API Key（也可在设置里填）:'); if(!k){ st.textContent='已取消（未提供 Key）'; return; } API_KEY=k.trim(); localStorage.setItem('ds_key',API_KEY); }
+    st.textContent='🤖 大模型生成章节索引中…';
+    const prompt='你是教材结构化助手。下面是一本书的章节片段信息（已标注页码范围）。请整理为严格 JSON：\n'+
+      '{"textbook":"教材名(据内容推断,如:七上英语)","pages":'+pages+',"units":[{"unit":"章/单元标题","page_start":起始页,"page_end":结束页,"summary":"一句话本章概要","sections":[{"section":"节标题","page_start":起始页,"page_end":结束页}]}]}\n'+
+      '要求：只输出合法 JSON，不要任何解释或代码块标记；无法判断页码可留 0；units 按书的实际单元/章组织。\n\n'+input;
+    const res=await fetch('https://api.deepseek.com/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+API_KEY},body:JSON.stringify({model:MODEL,messages:[{role:'user',content:prompt}],stream:false,temperature:0.2})});
+    if(!res.ok){ let m='生成失败('+res.status+')'; try{const e=await res.json();if(e.error&&e.error.message)m=e.error.message;}catch(_){} throw new Error(m); }
+    const data=await res.json();
+    let raw=(data.choices&&data.choices[0].message.content||'').trim();
+    raw=raw.replace(/^```json/i,'').replace(/^```/,'').replace(/```$/,'');
+    let idx;
+    try{ idx=JSON.parse(raw.trim()); }catch(_){ const mm=raw.match(/\{[\s\S]*\}/); if(!mm) throw new Error('模型返回无法解析为JSON'); idx=JSON.parse(mm[0]); }
+    idx.textbook=idx.textbook||title; idx.pages=idx.pages||pages;
+    if(!idx.units||!idx.units.length) idx.units=[{unit:idx.textbook,page_start:1,page_end:pages,summary:'',sections:[]}];
+    MAT.push({id:'tb'+Date.now(), title:idx.textbook, content:full.replace(/\[\[P\d+\]\]/g,'\n'), kind:'textbook', subject:curPath, funcs:'', meta:JSON.stringify(idx)});
+    saveAll(); render();
+    st.textContent='✓ 已生成教材索引（'+(idx.units?idx.units.length:0)+' 个单元）并保存';
+    showToast('教材「'+idx.textbook+'」已入库，拍照解题时可自动定位来源');
+  }catch(err){ st.textContent='⚠️ '+err.message; }
+}
+// 从带 [[Pn]] 标记的文本中提取页码范围
+function pagesOf(text){
+  const nums=[...text.matchAll(/\[\[P(\d+)\]\]/g)].map(m=>+m[1]);
+  return nums.length? {page_start:Math.min(...nums), page_end:Math.max(...nums)} : {page_start:0, page_end:0};
 }
 function splitByChapters(text){
   // 中英文章节标题都支持：
@@ -370,14 +425,14 @@ function splitByChapters(text){
   push(/Unit\s*[0-9]+/gi,'unit');
   push(/Section\s*[A-Z]/gi,'section');
   push(/Lesson\s*[0-9]+/gi,'lesson');
-  if(!pts.length){ return [{title:document.getElementById('m-title').value.trim()||'整本教材', content:text.trim()}]; }
+  if(!pts.length){ return [{title:document.getElementById('m-title').value.trim()||'整本教材', content:text.trim(), ...pagesOf(text)}]; }
   pts.sort((a,b)=>a.i-b.i);
   let segs=[];
   for(let k=0;k<pts.length;k++){
     const start=pts[k].i;
     const end=(k+1<pts.length)?pts[k+1].i:text.length;
     const next=text.slice(start, start+90).replace(/\s+/g,' ').trim();
-    segs.push({title:next.slice(0,50), content:text.slice(start,end).trim()});
+    segs.push({title:next.slice(0,50), content:text.slice(start,end).trim(), ...pagesOf(text.slice(start,end))});
   }
   // 合并过短标题段（<60字）到相邻长段，避免空壳章节
   const merged=[];
@@ -392,7 +447,8 @@ function splitByChapters(text){
     }
   }
   if(pending!==null && merged.length){ merged[merged.length-1].content += '\n\n'+pending; }
-  return merged;
+  // 合并后重算页码范围（内容仍含 [[Pn]] 标记）
+  return merged.map(s=>({...s, ...pagesOf(s.content)}));
 }
 function renderPDFPreview(chapters){
   pendingChapters=chapters;

@@ -79,6 +79,7 @@
   .ans{background:#f1f5fb;border:1px solid var(--line);border-radius:12px;padding:14px;
     font-size:14px;line-height:1.7;white-space:pre-wrap;word-break:break-word;
     max-height:52vh;overflow-y:auto;}
+  .src-tag{background:linear-gradient(90deg,#ecfdf5,#eff6ff);border:1px solid #a7f3d0;border-left:4px solid #10b981;color:#065f46;font-weight:700;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:14px;line-height:1.5;}
   .ans code{background:#e2e8f0;padding:1px 5px;border-radius:4px;font-size:12.5px;}
   .loading{color:var(--sub);font-size:13.5px;padding:10px 2px;}
   .loading::after{content:'';display:inline-block;width:12px;height:12px;margin-left:6px;
@@ -315,10 +316,10 @@ function sbHead(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Cont
 async function sbLoadAll(){
   const r=await fetch(SB_URL+'/rest/v1/materials?select=*&order=created_at.asc',{headers:sbHead()});
   if(!r.ok) throw new Error('读取失败 '+r.status);
-  return (await r.json()).map(x=>({id:x.id,title:x.title,content:x.content,subject:x.subject||'',kind:x.kind||'file',funcs:x.funcs||''}));
+  return (await r.json()).map(x=>({id:x.id,title:x.title,content:x.content,subject:x.subject||'',kind:x.kind||'file',funcs:x.funcs||'',meta:x.meta||''}));
 }
 async function sbUpsert(m){
-  const body=[{id:m.id,title:m.title,content:m.content,subject:m.subject||'',kind:m.kind||'file',funcs:m.funcs||''}];
+  const body=[{id:m.id,title:m.title,content:m.content,subject:m.subject||'',kind:m.kind||'file',funcs:m.funcs||'',meta:m.meta||''}];
   try{
     const r=await fetch(SB_URL+'/rest/v1/materials?on_conflict=id',{method:'POST',
       headers:Object.assign(sbHead(),{'Prefer':'resolution=merge-duplicates'}),body:JSON.stringify(body)});
@@ -486,6 +487,19 @@ function finalPrompt(){
   if(!mats.length) return base;
   return '请严格依据下面提供的资料内容来回答，只使用资料中的信息，不要编造资料之外的内容。\n\n=== 资料开始 ===\n'+
     mats.join('\n\n---\n\n')+'\n=== 资料结束 ===\n\n'+base;
+}
+function buildSourceContext(){
+  const label=SUBJECTS[curSub].label;
+  const books=MATERIALS.filter(m=>m.kind==='textbook' && m.meta && (m.subject===label || (m.subject||'').startsWith(label+'/')));
+  if(!books.length) return '';
+  return books.map(b=>{
+    let idx={}; try{ idx=JSON.parse(b.meta); }catch(_){ return ''; }
+    const us=(idx.units||[]).map(u=>{
+      const secs=(u.sections||[]).map(s=>'    · '+s.section+' (P'+(s.page_start||'?')+'-'+(s.page_end||'?')+')').join('\n');
+      return '《'+idx.textbook+'》 '+u.unit+' (P'+(u.page_start||'?')+'-'+(u.page_end||'?')+')'+(u.summary?'：'+u.summary:'')+(secs?'\n'+secs:'');
+    }).join('\n');
+    return us;
+  }).filter(Boolean).join('\n\n');
 }
 function render(){
   const p=build();
@@ -919,7 +933,13 @@ function copyText(txt){
 // 直接调用 DeepSeek
 async function askAI(){
   if(!API_KEY){openSettings();return;}
-  const prompt=finalPrompt();
+  let prompt=finalPrompt();
+  // 来源关联：讲题场景下，检索已格式化的教材，让模型标注题目来源章节页码
+  const srcCtx=buildSourceContext();
+  if(srcCtx && curTask && curTask.id==='explain'){
+    prompt += '\n\n=== 教材章节索引（可选参考，用于标注题目来源）===\n'+srcCtx+
+      '\n若本题可对应到上述某教材的某单元/节，请在回答【最前面】用单独一行标注：📍来源：<教材名> / <单元> / 第<页>页；若无法对应写：📍来源：未知。仅此一行，不要多余说明。';
+  }
   const box=document.getElementById('m-answer');
   box.style.display='block';
   box.innerHTML='<div class="loading">AI 正在解答…</div>';
@@ -937,7 +957,12 @@ async function askAI(){
     }
     const data=await res.json();
     const ans=(data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'（无内容）';
-    box.innerHTML='<div class="ans">'+md(ans)+'</div>'+
+    // 解析首行“📍来源：...”
+    let srcLine='', body0=ans;
+    const sm=ans.match(/^📍来源：[^\n]*/);
+    if(sm){ srcLine=sm[0]; body0=ans.slice(sm[0].length).replace(/^\n+/,''); }
+    const srcHtml = srcLine? '<div class="src-tag">'+md(srcLine)+'</div>' : '';
+    box.innerHTML= srcHtml + '<div class="ans">'+md(body0)+'</div>'+
       '<div class="btns" style="margin-top:8px"><button class="btn ghost" onclick="copyAns()">复制回答</button></div>';
   }catch(err){
     box.innerHTML='<div class="err">⚠️ '+md(err.message)+'<br>请检查 Key 是否正确、账户是否已充值；或改用「复制提示词」去 WorkBuddy 提问。</div>';
