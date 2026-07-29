@@ -503,8 +503,9 @@ function buildSourceContext(){
   return books.map(b=>{
     let idx={}; try{ idx=JSON.parse(b.meta); }catch(_){ return ''; }
     const us=(idx.units||[]).map(u=>{
-      const secs=(u.sections||[]).map(s=>'    · '+s.section+' (P'+(s.page_start||'?')+'-'+(s.page_end||'?')+')').join('\n');
-      return '《'+idx.textbook+'》 '+u.unit+' (P'+(u.page_start||'?')+'-'+(u.page_end||'?')+')'+(u.summary?'：'+u.summary:'')+(secs?'\n'+secs:'');
+      const uTitle=u.title||u.unit||'单元';
+      const secs=(u.sections||[]).map(s=>'    · '+(s.title||s.section||'节')+' (P'+(s.page_start||'?')+'-'+(s.page_end||'?')+')').join('\n');
+      return '《'+(idx.title||idx.textbook||'教材')+'》 '+uTitle+' (P'+(u.page_start||'?')+'-'+(u.page_end||'?')+')'+(u.summary?'：'+u.summary:'')+(secs?'\n'+secs:'');
     }).join('\n');
     return us;
   }).filter(Boolean).join('\n\n');

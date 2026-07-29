@@ -111,12 +111,10 @@
     <button class="mini" onclick="document.getElementById('m-file').click()">📄 上传文件(.txt/.md)</button>
     <button class="mini" onclick="document.getElementById('m-ocr').click()">📷 拍照/图片转文字</button>
     <button class="mini" onclick="document.getElementById('m-pdf').click()">📑 整本PDF拆章节</button>
-    <button class="mini" onclick="document.getElementById('m-book').click()">📚 上传教材(PDF)</button>
     <button class="mini" onclick="if(confirm('清空本地浏览器缓存（资料与开关，保留 DeepSeek Key）？'))clearLocal()">🧹 清空本地</button>
     <input id="m-file" type="file" accept=".txt,.md" style="display:none">
     <input id="m-ocr" type="file" accept="image/*" capture="environment" style="display:none">
     <input id="m-pdf" type="file" accept=".pdf" style="display:none">
-    <input id="m-book" type="file" accept=".pdf" style="display:none">
   </div>
   <span id="up-status" class="statusline"></span>
 </div>
@@ -142,6 +140,20 @@
 </div>
 
 <div class="panel" id="pdf-preview" style="display:none"></div>
+
+<!-- 教材库（结构化教程上传，独立于文件夹树）-->
+<div class="panel" id="book-panel">
+  <h3>📚 教材库（结构化教程）</h3>
+  <p class="sub">上传<b>官方教材的解析后文件</b>：仅支持 <code>.md</code> / <code>.json</code>（PDF 请先用大模型解析成该格式再上传）。教材按学科独立管理，用于后续<b>出题 / 查书定位 / 知识点检索</b>，与普通资料（文件夹树）互不干扰，存于同一云端表的 <code>kind='textbook'</code>。</p>
+  <div class="actbar">
+    <button class="mini" onclick="document.getElementById('m-tb').click()">📤 上传教材(MD/JSON)</button>
+    <button class="mini" onclick="if(confirm('清空教材库（仅教材，不含文件夹资料）？'))clearBooks()">🧹 清空调材库</button>
+    <span id="tb-status" class="statusline"></span>
+    <input id="m-tb" type="file" accept=".md,.json,text/markdown,application/json" style="display:none">
+  </div>
+  <div id="tb-preview" style="display:none"></div>
+  <div id="tb-list"></div>
+</div>
 
 <!-- 文件查看 / 关联弹层 -->
 <div class="mask" id="mask-view">
@@ -257,6 +269,7 @@ function render(){
       '</div>';
   });
   document.getElementById('tree').innerHTML=html;
+  renderTextbookList();
 }
 function setPath(p){ curPath=p; render(); }
 function drill(name){ curPath = curPath? curPath+'/'+name : name; render(); }
@@ -340,9 +353,6 @@ async function aiFormat(){
 document.getElementById('m-pdf').addEventListener('change',e=>{
   const file=e.target.files[0]; e.target.value=''; if(file) doPDF(file);
 });
-document.getElementById('m-book').addEventListener('change',e=>{
-  const file=e.target.files[0]; e.target.value=''; if(file) genTextbookIndex(file);
-});
 async function extractPDF(file){
   const st=document.getElementById('up-status');
   st.textContent='加载 PDF 解析器…';
@@ -372,45 +382,8 @@ async function doPDF(file){
     renderPDFPreview(chapters);
   }catch(err){ document.getElementById('up-status').textContent='⚠️ PDF 解析失败：'+err.message+'（扫描版图片 PDF 无法提取）'; }
 }
-// 上传教材：校验 + 大模型生成章节索引（含页码），存为 kind='textbook'
-async function genTextbookIndex(file){
-  const st=document.getElementById('up-status');
-  const title=(document.getElementById('m-title').value.trim())||file.name.replace(/\.pdf$/i,'');
-  try{
-    const {full,pages}=await extractPDF(file);
-    const chapters=splitByChapters(full);
-    const textLen=full.replace(/\[\[P\d+\]\]/g,'').replace(/\s+/g,'').length;
-    if(chapters.length===0 || textLen<300){
-      st.textContent='⚠️ 未识别到规范章节（格式特殊/疑似扫描版），将直接交给大模型智能整理…';
-    }else{
-      st.textContent='✓ 校验通过：'+pages+' 页，识别到 '+chapters.length+' 个章节，正在生成索引…';
-    }
-    const frag=chapters.map(c=>{
-      const pg=pagesOf(c.content);
-      const head=c.content.replace(/\[\[P\d+\]\]/g,'').slice(0,200).replace(/\s+/g,' ').trim();
-      return '【'+c.title+'】 页码 '+pg.page_start+'-'+pg.page_end+'\n'+head;
-    }).join('\n\n');
-    const input = chapters.length? frag : full.replace(/\[\[P\d+\]\]/g,'').slice(0,6000);
-    if(!API_KEY){ const k=prompt('请粘贴 DeepSeek API Key（也可在设置里填）:'); if(!k){ st.textContent='已取消（未提供 Key）'; return; } API_KEY=k.trim(); localStorage.setItem('ds_key',API_KEY); }
-    st.textContent='🤖 大模型生成章节索引中…';
-    const prompt='你是教材结构化助手。下面是一本书的章节片段信息（已标注页码范围）。请整理为严格 JSON：\n'+
-      '{"textbook":"教材名(据内容推断,如:七上英语)","pages":'+pages+',"units":[{"unit":"章/单元标题","page_start":起始页,"page_end":结束页,"summary":"一句话本章概要","sections":[{"section":"节标题","page_start":起始页,"page_end":结束页}]}]}\n'+
-      '要求：只输出合法 JSON，不要任何解释或代码块标记；无法判断页码可留 0；units 按书的实际单元/章组织。\n\n'+input;
-    const res=await fetch('https://api.deepseek.com/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+API_KEY},body:JSON.stringify({model:MODEL,messages:[{role:'user',content:prompt}],stream:false,temperature:0.2})});
-    if(!res.ok){ let m='生成失败('+res.status+')'; try{const e=await res.json();if(e.error&&e.error.message)m=e.error.message;}catch(_){} throw new Error(m); }
-    const data=await res.json();
-    let raw=(data.choices&&data.choices[0].message.content||'').trim();
-    raw=raw.replace(/^```json/i,'').replace(/^```/,'').replace(/```$/,'');
-    let idx;
-    try{ idx=JSON.parse(raw.trim()); }catch(_){ const mm=raw.match(/\{[\s\S]*\}/); if(!mm) throw new Error('模型返回无法解析为JSON'); idx=JSON.parse(mm[0]); }
-    idx.textbook=idx.textbook||title; idx.pages=idx.pages||pages;
-    if(!idx.units||!idx.units.length) idx.units=[{unit:idx.textbook,page_start:1,page_end:pages,summary:'',sections:[]}];
-    MAT.push({id:'tb'+Date.now(), title:idx.textbook, content:full.replace(/\[\[P\d+\]\]/g,'\n'), kind:'textbook', subject:curPath, funcs:'', meta:JSON.stringify(idx)});
-    saveAll(); render();
-    st.textContent='✓ 已生成教材索引（'+(idx.units?idx.units.length:0)+' 个单元）并保存';
-    showToast('教材「'+idx.textbook+'」已入库，拍照解题时可自动定位来源');
-  }catch(err){ st.textContent='⚠️ '+err.message; }
-}
+// 上传教材（PDF）已改为：先用外部大模型（如千问）把 PDF 解析成 MD/JSON，
+// 再在下方「教材库」面板以 MD/JSON 方式上传，存为 kind='textbook'。
 // 从带 [[Pn]] 标记的文本中提取页码范围
 function pagesOf(text){
   const nums=[...text.matchAll(/\[\[P(\d+)\]\]/g)].map(m=>+m[1]);
@@ -520,6 +493,151 @@ function delFolder(name){
   MAT=MAT.filter(m=>{ const p=itemPath(m); return !(p===full || p.startsWith(full+'/')); });
   saveAll(); render(); showToast('已删除文件夹');
 }
+
+// ===== 教材库（结构化教程上传，独立于文件夹树）=====
+document.getElementById('m-tb').addEventListener('change',e=>{ const f=e.target.files[0]; e.target.value=''; if(f) handleTextbookFile(f); });
+const TB_SUBJECTS=['语文','数学','英语','历史','地理','生物','道法'];
+let pendingTb=null;
+function parseMeta(m){ try{ return JSON.parse(m.meta||'{}'); }catch(_){ return {}; } }
+
+// MD -> textbook.v1
+function mdToTextbook(md){
+  const obj={schema:'textbook.v1', units:[]};
+  let curU=null, curS=null;
+  const pr=s=>{ const m=s.match(/P\s*(\d+)\s*[-–—~]\s*P?\s*(\d+)/i); return m?{page_start:+m[1],page_end:+m[2]}:null; };
+  const strip=s=>s.replace(/\s*\(P[^)]*\)\s*$/i,'').trim();
+  for(const raw of md.split(/\r?\n/)){
+    const line=raw.replace(/\s+$/,'');
+    if(line.startsWith('> ')){
+      const i=line.indexOf(':'); const k=(i<0?line.slice(2):line.slice(2,i)).trim().toLowerCase(); const val=(i<0?'':line.slice(i+1)).trim();
+      if(k==='subject') obj.subject=val;
+      else if(k==='grade') obj.grade=val;
+      else if(k==='publisher') obj.publisher=val;
+      else if(k==='edition') obj.edition=val;
+      else if(k==='pages') obj.pages=parseInt(val,10)||0;
+      else if(k==='summary'){ if(curU) curU.summary=val; }
+      else if(k==='points'){ const pts=val.split(/[;；]/).map(x=>x.trim()).filter(Boolean); if(curS) curS.knowledge_points=pts; }
+      continue;
+    }
+    if(line.startsWith('# ')){ obj.title=line.slice(2).trim(); continue; }
+    if(line.startsWith('## ')){
+      const t=line.slice(3).trim(); const p=pr(t);
+      curU={id:'U'+(obj.units.length+1), title:strip(t), summary:'', sections:[]};
+      if(p){curU.page_start=p.page_start;curU.page_end=p.page_end;}
+      obj.units.push(curU); curS=null; continue;
+    }
+    if(line.startsWith('### ')){
+      if(!curU){ curU={id:'U1',title:'单元',summary:'',sections:[]}; obj.units.push(curU); }
+      const t=line.slice(4).trim(); const p=pr(t);
+      curS={id:curU.id+'S'+(curU.sections.length+1), title:strip(t), content:'', knowledge_points:[]};
+      if(p){curS.page_start=p.page_start;curS.page_end=p.page_end;}
+      curU.sections.push(curS); continue;
+    }
+    if(line.trim()){
+      if(curS) curS.content=(curS.content?curS.content+'\n':'')+line;
+      else if(curU) curU.summary=(curU.summary?curU.summary+'\n':'')+line;
+    }
+  }
+  if(!obj.title && curU) obj.title=curU.title;
+  return obj;
+}
+
+// 校验 + 规范化 textbook.v1
+function validateTextbook(o){
+  if(!o || typeof o!=='object') return {ok:false,msg:'不是合法的教材对象'};
+  o.title = o.title || o.textbook || '';
+  if(!o.title) return {ok:false,msg:'缺少教材标题(title)'};
+  if(!Array.isArray(o.units) || !o.units.length) return {ok:false,msg:'缺少 units 单元数组或为空'};
+  o.schema='textbook.v1';
+  o.units.forEach((u,i)=>{
+    u.id=u.id||('U'+(i+1));
+    u.title=u.title||u.unit||('单元'+(i+1));
+    if(u.page_start==null) u.page_start=0;
+    if(u.page_end==null) u.page_end=0;
+    if(!u.sections) u.sections=[];
+    u.sections.forEach((s,j)=>{ s.id=s.id||(u.id+'S'+(j+1)); s.title=s.title||s.section||('节'+(j+1)); s.knowledge_points=s.knowledge_points||[]; });
+  });
+  return {ok:true};
+}
+
+function textbookToText(o){
+  let s='# '+(o.title||'')+'\n';
+  (o.units||[]).forEach(u=>{
+    s+='\n## '+u.title+'（P'+(u.page_start||'?')+'–P'+(u.page_end||'?')+'）\n'+(u.summary||'')+'\n';
+    (u.sections||[]).forEach(x=>{
+      s+='\n### '+x.title+'（P'+(x.page_start||'?')+'–P'+(x.page_end||'?')+'）\n'+(x.content||'')+'\n';
+      if(x.knowledge_points&&x.knowledge_points.length) s+='知识点：'+x.knowledge_points.join('；')+'\n';
+    });
+  });
+  return s;
+}
+
+async function handleTextbookFile(file){
+  const st=document.getElementById('tb-status');
+  st.textContent='解析中…';
+  let txt; try{ txt=await file.text(); }catch(err){ st.textContent='⚠️ 读取文件失败'; return; }
+  let obj;
+  try{ obj = /\.json$/i.test(file.name)? JSON.parse(txt) : mdToTextbook(txt); }
+  catch(err){ st.textContent='⚠️ 解析失败：'+err.message; return; }
+  const v=validateTextbook(obj);
+  if(!v.ok){ st.textContent='⚠️ '+v.msg; return; }
+  pendingTb=obj;
+  const u=obj.units.length; let sec=0; obj.units.forEach(x=>sec+=x.sections.length);
+  const subOpts=TB_SUBJECTS.map(s=>'<option'+(obj.subject===s?' selected':'')+'>'+s+'</option>').join('')
+    + (obj.subject&&!TB_SUBJECTS.includes(obj.subject)?'<option selected>'+esc(obj.subject)+'</option>':'');
+  const box=document.getElementById('tb-preview');
+  box.style.display='block';
+  box.innerHTML='<h3>✓ 解析成功，请确认后入库</h3>'+
+    '<div class="meta">教材：'+esc(obj.title)+' ｜ 共 '+u+' 单元 / '+sec+' 节'+(obj.pages?' ｜ '+obj.pages+' 页':'')+(obj.publisher?' ｜ '+esc(obj.publisher):'')+'</div>'+
+    '<div class="field"><label>学科（决定拍照解题时能否自动关联来源）</label><select id="tb-sub">'+subOpts+'</select></div>'+
+    '<pre style="max-height:240px;overflow:auto;background:#f6f8fa;padding:10px;border-radius:8px;font-size:12px;white-space:pre-wrap">'+esc(JSON.stringify(obj,null,2))+'</pre>'+
+    '<div class="btns" style="margin-top:10px"><button class="btn" onclick="confirmTextbook()">入库</button>'+
+    '<button class="btn ghost" onclick="document.getElementById(\'tb-preview\').style.display=\'none\';pendingTb=null">取消</button></div>';
+  st.textContent='';
+}
+
+function confirmTextbook(){
+  if(!pendingTb) return;
+  const obj=pendingTb; pendingTb=null;
+  const sub=document.getElementById('tb-sub'); if(sub&&sub.value) obj.subject=sub.value.trim();
+  const id='tb'+Date.now();
+  MAT.push({id, title:obj.title, content:textbookToText(obj), kind:'textbook', subject:obj.subject||'', funcs:'', meta:JSON.stringify(obj)});
+  saveAll(); render(); renderTextbookList();
+  document.getElementById('tb-preview').style.display='none';
+  document.getElementById('tb-status').textContent='✓ 已入库：'+obj.title;
+  showToast('教材「'+obj.title+'」已入库');
+}
+
+function renderTextbookList(){
+  const box=document.getElementById('tb-list'); if(!box) return;
+  const tbs=MAT.filter(m=>m.kind==='textbook');
+  if(!tbs.length){ box.innerHTML='<p class="sub">还没有教材。上传 MD/JSON 文件后将显示在这里。</p>'; return; }
+  const bySub={};
+  tbs.forEach(t=>{ const s=(parseMeta(t).subject)||t.subject||'未分类'; (bySub[s]=bySub[s]||[]).push(t); });
+  let html='';
+  Object.keys(bySub).forEach(s=>{
+    html+='<div style="margin:12px 0 4px;font-weight:700;color:var(--sub);font-size:13px">📘 '+esc(s)+'</div>';
+    bySub[s].forEach(t=>{
+      const md=parseMeta(t); const u=(md.units||[]).length; let sec=0; (md.units||[]).forEach(x=>sec+=(x.sections||[]).length);
+      html+='<div class="node"><span class="ic">📗</span><span class="nm">'+esc(t.title)+'</span>'+
+        '<span class="meta">'+u+'单元 / '+sec+'节</span>'+
+        '<button class="go" onclick="openBook(\''+t.id+'\')">查看</button>'+
+        '<button onclick="delBook(\''+t.id+'\')">删除</button></div>';
+    });
+  });
+  box.innerHTML=html;
+}
+
+function openBook(id){
+  const m=MAT.find(x=>x.id===id); if(!m) return;
+  viewId=id;
+  document.getElementById('v-title').textContent=m.title;
+  document.getElementById('v-body').textContent=textbookToText(parseMeta(m));
+  document.getElementById('v-funcs').innerHTML='<span class="sub">教材为结构化数据，不支持文件级功能关联；可在拍照解题时自动标注来源。</span>';
+  document.getElementById('mask-view').classList.add('show');
+}
+function delBook(id){ if(!confirm('删除该教材？')) return; MAT=MAT.filter(m=>m.id!==id); saveAll(); closeView(); render(); renderTextbookList(); }
+function clearBooks(){ MAT=MAT.filter(m=>m.kind!=='textbook'); saveAll(); render(); renderTextbookList(); document.getElementById('tb-status').textContent='已清空调材库'; }
 
 // ===== 云端开关 =====
 function toggleCloud(el){
