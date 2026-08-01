@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>七上数学·水平诊断测试</title>
+<style>
+  :root{
+    --brand:#4f46e5; --brand2:#6366f1; --bg:#f5f7fb; --card:#fff;
+    --line:#e5e9f2; --sub:#64748b; --ok:#16a34a; --bad:#dc2626; --warn:#d97706;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:#1e293b;line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:720px;margin:0 auto;padding:16px 14px 60px}
+  header{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;border-radius:18px;padding:20px 18px;box-shadow:0 8px 24px rgba(37,99,235,.25)}
+  header h1{margin:0 0 4px;font-size:21px}
+  header p{margin:0;font-size:13px;opacity:.92}
+  .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .chip{background:rgba(255,255,255,.18);padding:4px 10px;border-radius:999px;font-size:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 14px;margin:14px 0;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+  .card h2{font-size:15px;margin:0 0 12px;color:#334155}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;font-weight:700;color:#475569;margin-bottom:6px}
+  .field input[type=text],.field input[type=number]{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:11px;font-size:15px;color:#334155;background:#f8fafc}
+  .field input:focus{outline:none;border-color:var(--brand);background:#fff}
+  .units{display:flex;flex-wrap:wrap;gap:8px}
+  .uchip{padding:8px 12px;border:1.5px solid var(--line);border-radius:11px;font-size:13px;color:#475569;background:#f8fafc;cursor:pointer;user-select:none}
+  .uchip.on{background:#eff6ff;border-color:var(--brand);color:var(--brand);font-weight:700}
+  .uchip.all{background:#eef2ff}
+  .row2{display:flex;gap:10px}
+  .row2 .field{flex:1}
+  .modes{display:flex;gap:8px}
+  .mode{flex:1;text-align:center;padding:12px 8px;border:1.5px solid var(--line);border-radius:12px;font-size:13px;cursor:pointer;background:#f8fafc;color:#475569}
+  .mode.on{background:#eff6ff;border-color:var(--brand);color:var(--brand);font-weight:700}
+  .mode small{display:block;font-size:11px;opacity:.8;margin-top:3px;font-weight:400}
+  .apibox{margin-top:6px;font-size:12px;color:var(--sub);background:#f8fafc;border-radius:10px;padding:10px 12px}
+  .apibox input{margin-top:6px}
+  .btn{display:block;width:100%;border:none;border-radius:14px;padding:15px;font-size:16px;font-weight:800;color:#fff;
+    background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 18px rgba(37,99,235,.3);cursor:pointer;margin-top:6px}
+  .btn:active{transform:scale(.99)}
+  .btn.ghost{background:#eef2ff;color:var(--brand);box-shadow:none}
+  .btn.sm{display:inline-block;width:auto;padding:9px 16px;font-size:13px;margin:0}
+  .linkbtn{background:none;border:none;color:var(--brand);font-size:13px;cursor:pointer;padding:6px 0;text-decoration:underline}
+  /* quiz */
+  .sec-t{font-size:15px;font-weight:800;margin:20px 4px 10px;color:#334155}
+  .q{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 14px 10px;margin-bottom:12px;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+  .q-h{font-size:14px;font-weight:700;margin-bottom:4px}
+  .q-h .tag{font-size:11px;font-weight:600;color:var(--brand);background:#eef2ff;padding:1px 8px;border-radius:999px;margin-left:6px}
+  .q-b{font-size:14px;margin:6px 0 10px;color:#334155}
+  .opt{display:block;width:100%;text-align:left;background:#f8fafc;border:1.5px solid var(--line);border-radius:11px;
+    padding:10px 12px;margin:7px 0;font-size:14px;color:#334155;cursor:pointer;transition:.15s}
+  .opt:active{transform:scale(.99)}
+  .opt.sel{border-color:var(--brand);background:#eff6ff;color:var(--brand);font-weight:600}
+  .opt.correct{border-color:var(--ok);background:#ecfdf5;color:var(--ok);font-weight:700}
+  .opt.wrong{border-color:var(--bad);background:#fef2f2;color:var(--bad);font-weight:700}
+  .opt .k{display:inline-block;width:20px;color:var(--sub);font-weight:700}
+  .opt.sel .k,.opt.correct .k,.opt.wrong .k{color:inherit}
+  .exp{font-size:12.5px;color:var(--sub);background:#f8fafc;border-radius:10px;padding:8px 10px;margin-top:6px;display:none}
+  .exp.show{display:block}
+  .exp b{color:#334155}
+  /* result */
+  .res{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 18px;margin-top:18px;box-shadow:0 8px 28px rgba(15,23,42,.08)}
+  .score{text-align:center}
+  .score .num{font-size:54px;font-weight:900;line-height:1}
+  .level{display:inline-block;margin-top:8px;padding:5px 16px;border-radius:999px;font-weight:800;font-size:15px;color:#fff}
+  .bar{height:10px;background:#eef2f7;border-radius:999px;margin:16px 0 6px;overflow:hidden}
+  .bar>i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+  .sum{font-size:13.5px;color:var(--sub);text-align:center;margin-top:4px}
+  .weak{margin-top:18px}
+  .weak h3{font-size:14px;margin:0 0 8px}
+  .wrow{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:13px}
+  .wrow .lbl{width:130px;flex:none}
+  .wrow .wb{flex:1;height:8px;background:#eef2f7;border-radius:999px;overflow:hidden}
+  .wrow .wb>i{display:block;height:100%;background:var(--warn)}
+  .wrow .pc{width:48px;text-align:right;color:var(--sub);flex:none}
+  .adv{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 14px;margin-top:16px;font-size:13px;color:#92400e}
+  .adv b{color:#78350f}
+  .hist{margin-top:18px}
+  .hist h3{font-size:14px;margin:0 0 8px}
+  .hrow{display:flex;align-items:center;gap:8px;font-size:12.5px;border-bottom:1px dashed var(--line);padding:8px 2px;color:#334155}
+  .hrow .hn{font-weight:700;width:64px;flex:none}
+  .hrow .hd{width:108px;flex:none;color:var(--sub)}
+  .hrow .hs{font-weight:800;color:var(--brand)}
+  .hrow .ht{font-size:11px;color:var(--sub);flex:none;margin-left:auto}
+  .trend{display:flex;align-items:flex-end;gap:5px;height:60px;margin-top:8px}
+  .trend .tb{flex:1;background:linear-gradient(180deg,var(--brand),var(--brand2));border-radius:5px 5px 0 0;position:relative;min-width:0}
+  .trend .tb span{position:absolute;bottom:-16px;left:0;right:0;text-align:center;font-size:10px;color:var(--sub)}
+  .foot{font-size:11.5px;color:#94a3b8;text-align:center;margin-top:22px;line-height:1.7}
+  .toast{position:fixed;left:50%;top:24px;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;z-index:50}
+  .toast.show{opacity:1}
+  .loading{text-align:center;padding:40px 10px;color:var(--sub);font-size:14px}
+  .hide{display:none}
+  /* modal */
+  .mask{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;padding:18px;z-index:60}
+  .mask.show{display:flex}
+  .modal{background:#fff;border-radius:18px;max-width:560px;width:100%;max-height:82vh;overflow:auto;padding:18px 16px}
+  .modal h2{font-size:16px;margin:0 0 12px;color:#334155}
+  .modal .close{float:right;background:none;border:none;font-size:20px;color:var(--sub);cursor:pointer;margin-top:-6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>七上数学 · 水平诊断测试</h1>
+    <p>依据《七年级上册数学（人教版）》全册，可随机出题 / AI 重新出题，自动判分并记录成绩</p>
+    <div class="meta">
+      <span class="chip">可选单元 / 全学期</span>
+      <span class="chip">本地随机 · AI 出题</span>
+      <span class="chip">自动判分 + 水平等级</span>
+      <span class="chip">记录人 / 时间 / 成绩</span>
+    </div>
+  </header>
+
+  <!-- ============ 开始页 ============ -->
+  <div id="startScreen">
+    <div class="card">
+      <h2>① 基本信息（用于记录成绩）</h2>
+      <div class="row2">
+        <div class="field">
+          <label>姓名 *</label>
+          <input type="text" id="stuName" placeholder="如：小明" maxlength="12">
+        </div>
+        <div class="field">
+          <label>班级（可选）</label>
+          <input type="text" id="stuClass" placeholder="如：七(3)班" maxlength="12">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>② 出题范围</h2>
+      <div class="field">
+        <label>选择单元（点选；或一键选全学期）</label>
+        <div class="units" id="units"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>③ 题目设置</h2>
+      <div class="row2">
+        <div class="field">
+          <label>题目数量</label>
+          <input type="number" id="qCount" value="20" min="5" max="60">
+        </div>
+        <div class="field">
+          <label>出题方式</label>
+          <div class="modes">
+            <div class="mode on" id="mLocal" onclick="setMode('local')">本地随机<small>不耗 API</small></div>
+            <div class="mode" id="mAI" onclick="setMode('ai')">AI 重新出题<small>消耗 API</small></div>
+          </div>
+        </div>
+      </div>
+      <div class="apibox hide" id="aiNote">
+        需要在本机先填 DeepSeek API Key（与「学习小助手」共用，同域名已自动读取）。未填或调用失败时会自动改用本地题库随机出题。
+        <input type="text" id="apiKey" placeholder="sk-...（可选，留空则用已保存的 Key）" style="width:100%">
+      </div>
+      <button class="linkbtn" onclick="openHistory()">📒 查看历史成绩</button>
+    </div>
+
+    <button class="btn" onclick="startTest()">开始测试 ▶</button>
+  </div>
+
+  <!-- ============ 答题页 ============ -->
+  <div id="quizScreen" class="hide">
+    <div class="card" style="padding:12px 14px">
+      <div style="font-size:13px;color:#475569" id="quizInfo"></div>
+    </div>
+    <div id="quiz"></div>
+    <button class="btn" id="submitBtn" onclick="grade()">提交并查看成绩 ▶</button>
+    <button class="btn ghost hide" id="retryBtn" onclick="backHome()">返回首页 / 换范围</button>
+  </div>
+
+  <!-- ============ 结果页 ============ -->
+  <div id="resultScreen" class="hide">
+    <div id="result"></div>
+    <div class="card">
+      <h2>📒 历史成绩</h2>
+      <div id="histList"></div>
+    </div>
+    <button class="btn" id="againBtn" onclick="redoSame()">再用同样范围随机出一套 ▶</button>
+    <button class="btn ghost" onclick="backHome()">返回首页 / 换范围</button>
+  </div>
+
+  <div class="foot">
+    本测试题目依据教材重点概念、计算与典型例题整理或经 AI 生成，仅供家庭自测参考。<br>
+    建议孩子独立作答，再对照解析订正，效果最好。
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 历史弹窗 -->
+<div class="mask" id="histMask">
+  <div class="modal">
+    <button class="close" onclick="closeHistory()">×</button>
+    <h2>📒 历史成绩记录</h2>
+    <div id="histModalList"></div>
+    <div style="margin-top:10px;text-align:right">
+      <button class="linkbtn" onclick="clearHistory()">清空全部记录</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===================== 单元定义 ===================== */
+const UNITS=[
+  {k:'C1',label:'第1章 有理数',full:'第1章 有理数'},
+  {k:'C2',label:'第2章 整式',full:'第2章 整式的加减'},
+  {k:'C3',label:'第3章 方程',full:'第3章 一元一次方程'},
+  {k:'C4',label:'第4章 几何',full:'第4章 几何图形初步'},
+];
+const UNIT_FULL=new Set(UNITS.map(u=>u.full));
+
+/* ===================== 题库（按单元扩充） ===================== */
+const BANK=[
+{u:'第1章 有理数',part:'概念',q:'−3 的相反数是？',b:'',opts:['3','−3','1/3','−1/3'],a:0},
+{u:'第1章 有理数',part:'绝对值',q:'|−5| 的值是？',b:'',opts:['5','−5','1/5','0'],a:0,exp:'绝对值总是非负的。'},
+{u:'第1章 有理数',part:'概念',q:'下列各数中，正数的是？',b:'',opts:['2','−1','0','−3'],a:0},
+{u:'第1章 有理数',part:'数轴',q:'数轴上，表示 −2 的点在原点？',b:'',opts:['左侧','右侧','原点','不确定'],a:0},
+{u:'第1章 有理数',part:'比较',q:'比较大小：−1 与 −2，正确的是？',b:'',opts:['−1 > −2','−1 < −2','−1 = −2','无法比较'],a:0},
+{u:'第1章 有理数',part:'加法',q:'计算：（−3）+（+5）=？',b:'',opts:['2','−2','8','−8'],a:0},
+{u:'第1章 有理数',part:'减法',q:'计算：（−4）−（−2）=？',b:'',opts:['−2','−6','2','6'],a:0,exp:'减去一个数等于加上它的相反数。'},
+{u:'第1章 有理数',part:'乘法',q:'计算：（−2）×（−3）=？',b:'',opts:['6','−6','5','−5'],a:0,exp:'负数乘负数得正数。'},
+{u:'第1章 有理数',part:'除法',q:'计算：12÷（−3）=？',b:'',opts:['−4','4','−9','9'],a:0},
+{u:'第1章 有理数',part:'乘方',q:'计算：（−2）² =？',b:'',opts:['4','−4','−2','2'],a:0},
+{u:'第1章 有理数',part:'乘方',q:'（−1）¹⁰⁰ 的值是？',b:'',opts:['1','−1','0','100'],a:0,exp:'−1 的偶数次幂等于 1。'},
+{u:'第1章 有理数',part:'计算',q:'下列计算正确的是？',b:'',opts:['（−3）+ 3 = 0','5 −（−5）= 0','（−2）×（−3）= −6','|−5| = −5'],a:0},
+{u:'第1章 有理数',part:'分类',q:'有理数包括？',b:'',opts:['整数和分数','正数和负数','自然数和 0','无理数'],a:0},
+{u:'第1章 有理数',part:'概念',q:'0 属于下列哪一类？',b:'',opts:['整数','正数','负数','分数'],a:0,exp:'0 是整数，既不是正数也不是负数。'},
+{u:'第1章 有理数',part:'应用',q:'温度从 −3℃ 上升 5℃ 后是？',b:'',opts:['2℃','8℃','−8℃','−2℃'],a:0},
+{u:'第1章 有理数',part:'比较',q:'用“>”连接 0、−1、2，正确的是？',b:'',opts:['2 > 0 > −1','0 > 2 > −1','−1 > 0 > 2','2 > −1 > 0'],a:0},
+{u:'第2章 整式的加减',part:'概念',q:'下列式子中，是单项式的是？',b:'',opts:['3x','x + 1','1/x','x − y'],a:0},
+{u:'第2章 整式的加减',part:'系数',q:'单项式 −2ab² 的系数是？',b:'',opts:['−2','2','−2b','2b'],a:0},
+{u:'第2章 整式的加减',part:'次数',q:'单项式 3x²y 的次数是？',b:'',opts:['3','2','5','1'],a:0,exp:'次数 = 2 + 1 = 3。'},
+{u:'第2章 整式的加减',part:'概念',q:'下列各式中，是多项式的是？',b:'',opts:['x² + 2x','5a','0','−7'],a:0},
+{u:'第2章 整式的加减',part:'同类项',q:'与 3x²y 是同类项的是？',b:'',opts:['−x²y','3xy²','2x²','xy'],a:0,exp:'同类项要求字母相同且对应指数相同。'},
+{u:'第2章 整式的加减',part:'合并',q:'合并同类项：3a + 2a =？',b:'',opts:['5a','a','6a','5a²'],a:0},
+{u:'第2章 整式的加减',part:'去括号',q:'去括号：−(x − y) =？',b:'',opts:['−x + y','−x − y','x + y','x − y'],a:0},
+{u:'第2章 整式的加减',part:'化简',q:'化简：2(x + 1) =？',b:'',opts:['2x + 2','2x + 1','x + 2','2x'],a:0},
+{u:'第2章 整式的加减',part:'项',q:'整式 2x² − 3x + 1 的常数项是？',b:'',opts:['1','2','−3','0'],a:0},
+{u:'第2章 整式的加减',part:'计算',q:'下列计算正确的是？',b:'',opts:['4x − x = 3x','2x + 3y = 5xy','x² + x² = x⁴','3a − a = 3'],a:0},
+{u:'第2章 整式的加减',part:'多项式',q:'多项式 2a²b − ab + 1 是几次几项式？',b:'',opts:['三次三项式','二次三项式','三次二项式','二次二项式'],a:0,exp:'2a²b 次数为 3，共有 3 项。'},
+{u:'第2章 整式的加减',part:'同类项',q:'若 5xᵐy² 与 −3x³yⁿ 是同类项，则 m + n =？',b:'',opts:['5','6','4','3'],a:0,exp:'m = 3，n = 2，m + n = 5。'},
+{u:'第2章 整式的加减',part:'化简',q:'化简：3x − (2x − 1) =？',b:'',opts:['x + 1','x − 1','5x − 1','x'],a:0},
+{u:'第2章 整式的加减',part:'次数',q:'下列式子中，次数为 1 的单项式是？',b:'',opts:['5t','x²','xy','−3'],a:0},
+{u:'第2章 整式的加减',part:'求值',q:'已知 a = 2，则 3a − 1 =？',b:'',opts:['5','4','6','7'],a:0},
+{u:'第2章 整式的加减',part:'实质',q:'整式加减的实质是？',b:'',opts:['合并同类项','去分母','移项','因式分解'],a:0},
+{u:'第3章 一元一次方程',part:'概念',q:'下列方程中，是一元一次方程的是？',b:'',opts:['2x + 1 = 0','x² = 1','x + y = 2','1/x = 2'],a:0,exp:'一元一次：一个未知数、最高次为 1、整式方程。'},
+{u:'第3章 一元一次方程',part:'求解',q:'方程 x − 3 = 5 的解是？',b:'',opts:['x = 8','x = 2','x = −2','x = 3'],a:0},
+{u:'第3章 一元一次方程',part:'求解',q:'方程 2x = 6 的解是？',b:'',opts:['x = 3','x = −3','x = 2','x = 12'],a:0},
+{u:'第3章 一元一次方程',part:'移项',q:'解方程 3x + 2 = 11，移项得？',b:'',opts:['3x = 11 − 2','3x = 11 + 2','3x = 2 − 11','x = 9'],a:0,exp:'移项要变号。'},
+{u:'第3章 一元一次方程',part:'求解',q:'方程 x/2 = 4 的解是？',b:'',opts:['x = 8','x = 2','x = 4','x = −8'],a:0},
+{u:'第3章 一元一次方程',part:'列方程',q:'“x 的 3 倍与 5 的差等于 10”列方程为？',b:'',opts:['3x − 5 = 10','3(x − 5) = 10','3x + 5 = 10','x/3 − 5 = 10'],a:0},
+{u:'第3章 一元一次方程',part:'应用',q:'一件商品原价 100 元，打八折后的售价是？',b:'',opts:['80 元','20 元','90 元','98 元'],a:0,exp:'100 × 0.8 = 80。'},
+{u:'第3章 一元一次方程',part:'求解',q:'若 2x − 1 = 7，则 x =？',b:'',opts:['4','3','−4','8'],a:0,exp:'2x = 8，x = 4。'},
+{u:'第3章 一元一次方程',part:'判断',q:'下列方程中，解为 x = 2 的是？',b:'',opts:['2x = 4','x + 1 = 4','3x = 2','x − 3 = 2'],a:0},
+{u:'第3章 一元一次方程',part:'去括号',q:'去括号：2(x − 3) =？',b:'',opts:['2x − 6','2x − 3','2x + 6','x − 6'],a:0},
+{u:'第3章 一元一次方程',part:'求解',q:'方程 4x − 1 = 3 的解是？',b:'',opts:['x = 1','x = 2','x = 0','x = −1'],a:0,exp:'4x = 4，x = 1。'},
+{u:'第3章 一元一次方程',part:'应用',q:'甲比乙大 5 岁，设乙 x 岁，则甲为？',b:'',opts:['x + 5','5x','x − 5','x/5'],a:0},
+{u:'第3章 一元一次方程',part:'应用',q:'一项工程甲单独做需 10 天，则甲每天完成？',b:'',opts:['1/10','10','1','1/5'],a:0},
+{u:'第3章 一元一次方程',part:'概念',q:'一元一次方程的条件不包括？',b:'',opts:['含有两个未知数','只有一个未知数','未知数次数为 1','是整式方程'],a:0},
+{u:'第3章 一元一次方程',part:'求解',q:'若 3(x − 1) = 9，则 x =？',b:'',opts:['4','3','−2','2'],a:0,exp:'3x − 3 = 9，3x = 12，x = 4。'},
+{u:'第3章 一元一次方程',part:'步骤',q:'列方程解应用题的第一步通常是？',b:'',opts:['设未知数','写答案','验算','解方程'],a:0},
+{u:'第4章 几何图形初步',part:'立体图形',q:'下列图形中，是立体图形的是？',b:'',opts:['正方体','线段','角','三角形'],a:0},
+{u:'第4章 几何图形初步',part:'立体图形',q:'长方体有？',b:'',opts:['6 个面','4 个面','8 个面','12 个面'],a:0,exp:'长方体有 6 个面、8 个顶点、12 条棱。'},
+{u:'第4章 几何图形初步',part:'展开图',q:'正方体展开后共有？',b:'',opts:['6 个正方形','4 个正方形','8 个面','12 个面'],a:0},
+{u:'第4章 几何图形初步',part:'线段',q:'下列说法正确的是？',b:'',opts:['两点之间线段最短','两点之间直线最短','射线比直线长','线段可以无限延伸'],a:0},
+{u:'第4章 几何图形初步',part:'直线',q:'直线 AB 与 BA？',b:'',opts:['是同一条直线','是两条不同的直线','不相等','无法判断'],a:0},
+{u:'第4章 几何图形初步',part:'线段',q:'线段的中点把线段分成？',b:'',opts:['相等的两段','任意两段','三段','一倍'],a:0},
+{u:'第4章 几何图形初步',part:'角度',q:'1° 等于多少分？',b:'',opts:['60′','100′','10′','3600′'],a:0},
+{u:'第4章 几何图形初步',part:'角度',q:'钟面上 3:00 时，时针与分针的夹角是？',b:'',opts:['90°','60°','30°','180°'],a:0},
+{u:'第4章 几何图形初步',part:'角度',q:'角的度量单位是？',b:'',opts:['度、分、秒','米、厘米','千克','升'],a:0},
+{u:'第4章 几何图形初步',part:'角',q:'下列说法正确的是？',b:'',opts:['平角等于 180°','周角等于 180°','锐角大于 90°','钝角小于 90°'],a:0},
+{u:'第4章 几何图形初步',part:'角',q:'下列角中，属于锐角的是？',b:'',opts:['30°','90°','120°','180°'],a:0},
+{u:'第4章 几何图形初步',part:'直线',q:'两点确定？',b:'',opts:['一条直线','两条射线','一条线段','一个平面'],a:0,exp:'两点确定一条直线。'},
+{u:'第4章 几何图形初步',part:'立体图形',q:'正方体有？',b:'',opts:['8 个顶点','6 个顶点','12 个顶点','4 个顶点'],a:0},
+{u:'第4章 几何图形初步',part:'截面',q:'用一个平面去截正方体，截面不可能是？',b:'',opts:['七边形','三角形','四边形','五边形'],a:0,exp:'截面边数不超过正方体的面数 6。'},
+{u:'第4章 几何图形初步',part:'余角',q:'互为余角的两个角之和为？',b:'',opts:['90°','180°','360°','45°'],a:0},
+{u:'第4章 几何图形初步',part:'补角',q:'互为补角的两个角之和为？',b:'',opts:['180°','90°','360°','45°'],a:0}
+];
+
+/* ===================== 状态 ===================== */
+const answers={};
+let Q=[];
+let currentName='', lastCount=20, lastAI=false, lastScopeText='全学期';
+let mode='local';
+const selectedUnits=new Set(UNITS.map(u=>u.full));
+
+/* ===================== 工具 ===================== */
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1500);}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+/* 打乱单题选项，使正确项下标随机分布（题库里 a 多固定为 0，必须重排） */
+function shuffleOptions(q){
+  const idx=[0,1,2,3];
+  for(let i=idx.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
+  return Object.assign({},q,{opts:idx.map(k=>q.opts[k]),a:idx.indexOf(q.a)});
+}
+function $(id){return document.getElementById(id);}
+
+/* ===================== 开始页渲染 ===================== */
+function renderUnits(){
+  const box=$('units');
+  let html='<span class="uchip all on" id="uAll" onclick="toggleAll()">📚 全学期</span>';
+  html+=UNITS.map(u=>`<span class="uchip on" data-k="${u.full}" onclick="toggleUnit('${u.full}')">${u.label}</span>`).join('');
+  box.innerHTML=html;
+}
+function toggleAll(){
+  UNITS.forEach(u=>selectedUnits.add(u.full));
+  document.querySelectorAll('#units .uchip').forEach(c=>c.classList.add('on'));
+}
+function toggleUnit(full){
+  // 点具体单元时，取消“全学期”高亮，转为自选
+  $('uAll').classList.remove('on');
+  if(selectedUnits.has(full)){selectedUnits.delete(full);}
+  else{selectedUnits.add(full);}
+  const chip=document.querySelector(`#units .uchip[data-k="${CSS.escape(full)}"]`);
+  if(chip)chip.classList.toggle('on',selectedUnits.has(full));
+}
+function setMode(m){
+  mode=m;
+  $('mLocal').classList.toggle('on',m==='local');
+  $('mAI').classList.toggle('on',m==='ai');
+  $('aiNote').classList.toggle('hide',m!=='ai');
+}
+renderUnits();
+setMode('local');
+
+/* ===================== 开始测试 ===================== */
+function startTest(){
+  const name=($('stuName').value||'').trim();
+  if(!name){toast('请输入姓名以便记录成绩');$('stuName').focus();return;}
+  if(selectedUnits.size===0){toast('请至少选择一个单元');return;}
+  let count=parseInt($('qCount').value)||20;
+  count=Math.max(5,Math.min(60,count));
+  currentName=name; lastCount=count; lastAI=(mode==='ai');
+  lastScopeText = selectedUnits.size===UNITS.length ? '全学期' : [...selectedUnits].sort().join('、');
+
+  if(mode==='ai'){ generateAI(count); }
+  else { buildLocal(count); }
+}
+
+/* 本地随机抽题（按比例分布到所选单元） */
+function buildLocal(count){
+  const sel=[...selectedUnits];
+  const byUnit={};
+  sel.forEach(u=>byUnit[u]=shuffle(BANK.filter(x=>x.u===u)));
+  let per=Math.max(1,Math.floor(count/sel.length));
+  let picked=[];
+  sel.forEach(u=>{ picked=picked.concat(byUnit[u].slice(0,per)); });
+  // 补足
+  let rest=count-picked.length;
+  if(rest>0){
+    let pool=[];
+    sel.forEach(u=>{ const used=new Set(picked.filter(x=>x.u===u)); byUnit[u].forEach(x=>{if(!used.has(x))pool.push(x);}); });
+    pool=shuffle(pool);
+    picked=picked.concat(pool.slice(0,rest));
+  }
+  picked=shuffle(picked).slice(0,count);
+  beginQuiz(picked,'本地随机');
+}
+
+/* AI 重新出题（消耗 API） */
+async function generateAI(count){
+  const KEY=($('apiKey').value||'').trim() || localStorage.getItem('mtest_key') || localStorage.getItem('ds_key') || '';
+  if(KEY) localStorage.setItem('mtest_key',KEY);
+  if(!KEY){
+    toast('未设置 API Key，已改用本地题库随机出题');
+    buildLocal(count); return;
+  }
+  showQuizLoading('🤖 AI 正在按所选单元重新出题，请稍候…');
+  const unitsText=[...selectedUnits].sort().join('、');
+  const prompt=`你是一位七年级上册数学（人教版）出题老师。请根据七年级上册数学范围（有理数、整式的加减、一元一次方程、几何图形初步），为以下单元出 ${count} 道四选一选择题，用于学生水平诊断。
+要求：
+1. 单元范围（u 只能取以下之一）：${unitsText}
+2. 题型混合：概念判断、计算、方程应用、几何识图 都可有，难度为七年级上学期。
+3. 每题返回 JSON 对象，字段严格为：
+   - u：单元名（必须是上面给定的单元之一）
+   - q：题干（可含换行，用 \\n 表示）
+   - b：题干前置背景/短文，没有则空字符串 ""
+   - opts：长度为 4 的字符串数组（选项）
+   - a：正确答案下标（0-3 的整数）
+   - exp：中文解析（一句话说明考点）
+4. 只输出一个 JSON 数组，不要任何解释文字，不要使用 markdown 代码块标记。
+5. 共 ${count} 题，务必凑足数量。`;
+  try{
+    const resp=await fetch('https://api.deepseek.com/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY},
+      body:JSON.stringify({model:'deepseek-chat',messages:[{role:'system',content:'你是严谨的七年级数学（人教版）老师，只输出符合要求的 JSON。'},{role:'user',content:prompt}],temperature:0.9,max_tokens:3500})
+    });
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const d=await resp.json();
+    const content=d.choices?.[0]?.message?.content||'';
+    const qs=parseAI(content);
+    if(qs.length<3) throw new Error('生成题目过少');
+    beginQuiz(qs,'AI 出题');
+  }catch(e){
+    console.error(e);
+    toast('AI 出题失败（'+e.message+'），已改用本地题库随机出题');
+    buildLocal(count);
+  }
+}
+function parseAI(text){
+  let t=(text||'').trim().replace(/```json/gi,'').replace(/```/g,'').trim();
+  // 截取第一个 [ 到最后一个 ]
+  const s=t.indexOf('['), e=t.lastIndexOf(']');
+  if(s>=0&&e>t) t=t.slice(s,e+1);
+  let arr;
+  try{ arr=JSON.parse(t); }catch(_){ return []; }
+  if(!Array.isArray(arr)) return [];
+  return arr.filter(x=>{
+    if(!x||!Array.isArray(x.opts)||x.opts.length!==4||!x.q) return false;
+    const ai=Number(x.a);
+    return Number.isInteger(ai)&&ai>=0&&ai<4;
+  }).map(x=>({u:(UNIT_FULL.has(x.u)?x.u:UNITS[0].full),q:String(x.q),b:String(x.b||''),opts:x.opts.map(String),a:Number(x.a),exp:String(x.exp||''),part:''}));
+}
+
+/* ===================== 渲染答题 ===================== */
+function showQuizLoading(msg){
+  $('startScreen').classList.add('hide');
+  $('resultScreen').classList.add('hide');
+  $('quizScreen').classList.remove('hide');
+  $('submitBtn').classList.add('hide');
+  $('retryBtn').classList.add('hide');
+  $('quiz').innerHTML='<div class="loading">'+msg+'</div>';
+  window.scrollTo(0,0);
+}
+function beginQuiz(questions,srcLabel){
+  Q=questions.map(shuffleOptions);
+  for(const k in answers) delete answers[k];
+  const quizEl=$('quiz');
+  quizEl.innerHTML='';
+  Q.forEach((it,i)=>{
+    const qid='q'+i;
+    const optsHtml=it.opts.map((o,ki)=>
+      `<button class="opt" id="o-${qid}-${ki}" onclick="pick('${qid}',${ki})"><span class="k">${String.fromCharCode(65+ki)}.</span>${esc(o)}</button>`
+    ).join('');
+    const div=document.createElement('div');
+    div.className='q';
+    div.innerHTML=`<div class="q-h">第 ${i+1} 题<span class="tag">${esc(it.u)}</span></div>`+
+      (it.b?`<div class="q-b">${esc(it.b)}</div>`:'')+
+      `<div class="q-b">${esc(it.q)}</div>`+
+      optsHtml+
+      `<div class="exp" id="exp-${qid}">${it.exp?('💡 '+esc(it.exp)):''}</div>`;
+    quizEl.appendChild(div);
+  });
+  $('quizInfo').textContent=`考生：${currentName}（${($('stuClass').value||'').trim()||'—'}） ｜ 范围：${lastScopeText} ｜ 共 ${questions.length} 题 ｜ 来源：${srcLabel}`;
+  $('startScreen').classList.add('hide');
+  $('resultScreen').classList.add('hide');
+  $('quizScreen').classList.remove('hide');
+  $('submitBtn').classList.remove('hide');
+  $('retryBtn').classList.add('hide');
+  window.scrollTo(0,0);
+}
+function pick(qid,ki){
+  answers[qid]=ki;
+  for(let k=0;k<10;k++){
+    const el=document.getElementById('o-'+qid+'-'+k);
+    if(el) el.classList.toggle('sel',k===ki);
+  }
+}
+
+/* ===================== 判分 ===================== */
+function grade(){
+  if(Q.length===0) return;
+  let unanswered=0,first=null;
+  for(let i=0;i<Q.length;i++){const qid='q'+i;if(answers[qid]===undefined){unanswered++;if(!first)first=qid;}}
+  if(unanswered>0){
+    toast('还有 '+unanswered+' 题没答，请完成全部 '+Q.length+' 题');
+    if(first){const el=document.getElementById('o-'+first+'-0');if(el)el.closest('.q').scrollIntoView({behavior:'smooth',block:'center'});}
+    return;
+  }
+  let correct=0;const wrongUnits={},unitTotal={};
+  for(let i=0;i<Q.length;i++){
+    const qid='q'+i;const it=Q[i];
+    unitTotal[it.u]=(unitTotal[it.u]||0)+1;
+    const chosen=answers[qid];
+    const opts=it.opts.map((o,k)=>document.getElementById('o-'+qid+'-'+k));
+    const expEl=document.getElementById('exp-'+qid);
+    opts[it.a].classList.add('correct');
+    if(chosen===it.a){correct++;}
+    else{opts[chosen].classList.add('wrong');wrongUnits[it.u]=(wrongUnits[it.u]||0)+1;}
+    if(it.exp)expEl.classList.add('show');
+    opts.forEach(o=>o.onclick=null);
+  }
+  showResult(correct,Q.length,wrongUnits,unitTotal);
+}
+
+function showResult(correct,total,wrongUnits,unitTotal){
+  const score=Math.round(correct/total*100);
+  let level,lvlColor,comment;
+  if(score>=90){level='优秀 A';lvlColor='var(--ok)';comment='七上科学掌握扎实，各章核心概念与实验探究都过关，可挑战综合应用题。';}
+  else if(score>=75){level='良好 B';lvlColor='var(--brand)';comment='基本达标，个别语法点需巩固。对照解析把错题库再刷一遍即可稳住。';}
+  else if(score>=60){level='合格 C';lvlColor='var(--warn)';comment='有薄弱单元，建议按下方“薄弱项”优先复习对应单元的重点词组与语法。';}
+  else {level='待提升 D';lvlColor='var(--bad)';comment='建议从 Starter Unit 与 be 动词、三单、there be 等基础语法重新抓起，先背熟词组再练题。';}
+
+  const rows=Object.keys(unitTotal).map(u=>({
+    u,total:unitTotal[u],wrong:wrongUnits[u]||0,
+    pc:unitTotal[u]?Math.round((wrongUnits[u]||0)/unitTotal[u]*100):0
+  })).sort((a,b)=>b.pc-a.pc);
+  const weakRows=rows.map(r=>
+    `<div class="wrow"><div class="lbl">${r.u}</div><div class="wb"><i style="width:${r.pc}%"></i></div><div class="pc">${r.wrong}/${r.total}</div></div>`
+  ).join('')||'<div class="sum">🎉 全单元零失误，非常棒！</div>';
+
+  let advice='';
+  const top=rows.find(r=>r.wrong>0);
+  if(top){
+    const map={
+      '第1章 有理数':'复习正数负数、数轴、相反数、绝对值，以及有理数四则运算与乘方，注意符号规则。',
+      '第2章 整式的加减':'掌握单项式/多项式概念、系数与次数，熟练合并同类项与去括号化简。',
+      '第3章 一元一次方程':'巩固方程概念、移项与去括号解法，以及列方程解应用题（打折、工程等）。',
+      '第4章 几何图形初步':'熟记立体图形特征、直线/线段/射线、角的度量与余角补角概念。'
+    };
+    advice=`<div class="adv"><b>📌 复习建议：</b>最薄弱的是 <b>${top.u}</b>（错 ${top.wrong}/${top.total}）。${map[top.u]||''}</div>`;
+  }
+
+  const res=$('result');
+  res.innerHTML=`
+    <div class="res">
+      <div style="font-size:13px;color:#475569;text-align:center">考生：${esc(currentName)}（${esc(($('stuClass').value||'').trim()||'—')}）｜ 范围：${esc(lastScopeText)}｜ ${new Date().toLocaleString('zh-CN')}</div>
+      <div class="score" style="margin-top:10px">
+        <div class="num" style="color:${lvlColor}">${score}</div>
+        <div class="level" style="background:${lvlColor}">${level}</div>
+        <div class="sum">答对 ${correct} / ${total} 题 · 满分 100</div>
+      </div>
+      <div class="bar"><i style="width:${score}%"></i></div>
+      <div class="sum">${comment}</div>
+      <div class="weak">
+        <h3>📊 各单元正确率（薄弱项排序）</h3>
+        ${weakRows}
+      </div>
+      ${advice}
+      <div class="adv" style="background:#eff6ff;border-color:#bfdbfe;color:#1e40af;margin-top:14px">✅ 本次成绩已自动记录到本机（含姓名、时间、范围、分数与各单元正确率）。可在下方或“查看历史成绩”回看。</div>
+    </div>`;
+
+  // 记录
+  saveRecord({name:currentName,cls:($('stuClass').value||'').trim(),scope:lastScopeText,score,total,correct,
+    dt:new Date().toISOString(),dtDisplay:new Date().toLocaleString('zh-CN'),
+    breakdown:rows.map(r=>({u:r.u,total:r.total,wrong:r.wrong}))});
+
+  $('quizScreen').classList.add('hide');
+  $('resultScreen').classList.remove('hide');
+  renderHistory($('histList'));
+  $('resultScreen').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ===================== 成绩记录 ===================== */
+function saveRecord(rec){
+  let h=[];
+  try{h=JSON.parse(localStorage.getItem('mtest_history')||'[]');}catch(_){}
+  h.unshift(rec);
+  if(h.length>50)h=h.slice(0,50);
+  localStorage.setItem('mtest_history',JSON.stringify(h));
+}
+function renderHistory(container){
+  let h=[];
+  try{h=JSON.parse(localStorage.getItem('mtest_history')||'[]');}catch(_){}
+  if(!h.length){container.innerHTML='<div class="sum">暂无记录，做完一套测试就会显示在这里。</div>';return;}
+  const rows=h.map(r=>`<div class="hrow"><span class="hn">${esc(r.name)}</span><span class="hd">${esc(r.scope)}</span><span class="hs">${r.score}分</span><span class="ht">${esc(r.dtDisplay)}</span></div>`).join('');
+  // 走势（最近 8 次）
+  const recent=h.slice(0,8).reverse();
+  const trend=recent.map(r=>`<div class="tb" style="height:${Math.max(6,r.score*0.55)}px" title="${r.score}"><span>${r.score}</span></div>`).join('');
+  container.innerHTML=`<div class="trend">${trend}</div><div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:8px">最近 ${recent.length} 次得分走势</div>`+rows;
+}
+function openHistory(){
+  renderHistory($('histModalList'));
+  $('histMask').classList.add('show');
+}
+function closeHistory(){$('histMask').classList.remove('show');}
+function clearHistory(){
+  if(confirm('确定清空全部历史成绩记录？此操作不可恢复。')){
+    localStorage.removeItem('mtest_history');
+    renderHistory($('histModalList'));renderHistory($('histList'));
+    toast('已清空历史记录');
+  }
+}
+$('histMask').addEventListener('click',e=>{if(e.target.id==='histMask')closeHistory();});
+
+/* ===================== 导航 ===================== */
+function backHome(){
+  $('quizScreen').classList.add('hide');
+  $('resultScreen').classList.add('hide');
+  $('startScreen').classList.remove('hide');
+  window.scrollTo(0,0);
+}
+function redoSame(){
+  if(lastAI){ generateAI(lastCount); }
+  else { buildLocal(lastCount); }
+}
+</script>
+</body>
+</html>

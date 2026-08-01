@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>七上语文·水平诊断测试</title>
+<style>
+  :root{
+    --brand:#ea580c; --brand2:#f97316; --bg:#f5f7fb; --card:#fff;
+    --line:#e5e9f2; --sub:#64748b; --ok:#16a34a; --bad:#dc2626; --warn:#d97706;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:#1e293b;line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:720px;margin:0 auto;padding:16px 14px 60px}
+  header{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;border-radius:18px;padding:20px 18px;box-shadow:0 8px 24px rgba(37,99,235,.25)}
+  header h1{margin:0 0 4px;font-size:21px}
+  header p{margin:0;font-size:13px;opacity:.92}
+  .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .chip{background:rgba(255,255,255,.18);padding:4px 10px;border-radius:999px;font-size:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 14px;margin:14px 0;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+  .card h2{font-size:15px;margin:0 0 12px;color:#334155}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;font-weight:700;color:#475569;margin-bottom:6px}
+  .field input[type=text],.field input[type=number]{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:11px;font-size:15px;color:#334155;background:#f8fafc}
+  .field input:focus{outline:none;border-color:var(--brand);background:#fff}
+  .units{display:flex;flex-wrap:wrap;gap:8px}
+  .uchip{padding:8px 12px;border:1.5px solid var(--line);border-radius:11px;font-size:13px;color:#475569;background:#f8fafc;cursor:pointer;user-select:none}
+  .uchip.on{background:#eff6ff;border-color:var(--brand);color:var(--brand);font-weight:700}
+  .uchip.all{background:#eef2ff}
+  .row2{display:flex;gap:10px}
+  .row2 .field{flex:1}
+  .modes{display:flex;gap:8px}
+  .mode{flex:1;text-align:center;padding:12px 8px;border:1.5px solid var(--line);border-radius:12px;font-size:13px;cursor:pointer;background:#f8fafc;color:#475569}
+  .mode.on{background:#eff6ff;border-color:var(--brand);color:var(--brand);font-weight:700}
+  .mode small{display:block;font-size:11px;opacity:.8;margin-top:3px;font-weight:400}
+  .apibox{margin-top:6px;font-size:12px;color:var(--sub);background:#f8fafc;border-radius:10px;padding:10px 12px}
+  .apibox input{margin-top:6px}
+  .btn{display:block;width:100%;border:none;border-radius:14px;padding:15px;font-size:16px;font-weight:800;color:#fff;
+    background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 18px rgba(37,99,235,.3);cursor:pointer;margin-top:6px}
+  .btn:active{transform:scale(.99)}
+  .btn.ghost{background:#eef2ff;color:var(--brand);box-shadow:none}
+  .btn.sm{display:inline-block;width:auto;padding:9px 16px;font-size:13px;margin:0}
+  .linkbtn{background:none;border:none;color:var(--brand);font-size:13px;cursor:pointer;padding:6px 0;text-decoration:underline}
+  /* quiz */
+  .sec-t{font-size:15px;font-weight:800;margin:20px 4px 10px;color:#334155}
+  .q{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 14px 10px;margin-bottom:12px;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+  .q-h{font-size:14px;font-weight:700;margin-bottom:4px}
+  .q-h .tag{font-size:11px;font-weight:600;color:var(--brand);background:#eef2ff;padding:1px 8px;border-radius:999px;margin-left:6px}
+  .q-b{font-size:14px;margin:6px 0 10px;color:#334155}
+  .opt{display:block;width:100%;text-align:left;background:#f8fafc;border:1.5px solid var(--line);border-radius:11px;
+    padding:10px 12px;margin:7px 0;font-size:14px;color:#334155;cursor:pointer;transition:.15s}
+  .opt:active{transform:scale(.99)}
+  .opt.sel{border-color:var(--brand);background:#eff6ff;color:var(--brand);font-weight:600}
+  .opt.correct{border-color:var(--ok);background:#ecfdf5;color:var(--ok);font-weight:700}
+  .opt.wrong{border-color:var(--bad);background:#fef2f2;color:var(--bad);font-weight:700}
+  .opt .k{display:inline-block;width:20px;color:var(--sub);font-weight:700}
+  .opt.sel .k,.opt.correct .k,.opt.wrong .k{color:inherit}
+  .exp{font-size:12.5px;color:var(--sub);background:#f8fafc;border-radius:10px;padding:8px 10px;margin-top:6px;display:none}
+  .exp.show{display:block}
+  .exp b{color:#334155}
+  /* result */
+  .res{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 18px;margin-top:18px;box-shadow:0 8px 28px rgba(15,23,42,.08)}
+  .score{text-align:center}
+  .score .num{font-size:54px;font-weight:900;line-height:1}
+  .level{display:inline-block;margin-top:8px;padding:5px 16px;border-radius:999px;font-weight:800;font-size:15px;color:#fff}
+  .bar{height:10px;background:#eef2f7;border-radius:999px;margin:16px 0 6px;overflow:hidden}
+  .bar>i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+  .sum{font-size:13.5px;color:var(--sub);text-align:center;margin-top:4px}
+  .weak{margin-top:18px}
+  .weak h3{font-size:14px;margin:0 0 8px}
+  .wrow{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:13px}
+  .wrow .lbl{width:130px;flex:none}
+  .wrow .wb{flex:1;height:8px;background:#eef2f7;border-radius:999px;overflow:hidden}
+  .wrow .wb>i{display:block;height:100%;background:var(--warn)}
+  .wrow .pc{width:48px;text-align:right;color:var(--sub);flex:none}
+  .adv{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 14px;margin-top:16px;font-size:13px;color:#92400e}
+  .adv b{color:#78350f}
+  .hist{margin-top:18px}
+  .hist h3{font-size:14px;margin:0 0 8px}
+  .hrow{display:flex;align-items:center;gap:8px;font-size:12.5px;border-bottom:1px dashed var(--line);padding:8px 2px;color:#334155}
+  .hrow .hn{font-weight:700;width:64px;flex:none}
+  .hrow .hd{width:108px;flex:none;color:var(--sub)}
+  .hrow .hs{font-weight:800;color:var(--brand)}
+  .hrow .ht{font-size:11px;color:var(--sub);flex:none;margin-left:auto}
+  .trend{display:flex;align-items:flex-end;gap:5px;height:60px;margin-top:8px}
+  .trend .tb{flex:1;background:linear-gradient(180deg,var(--brand),var(--brand2));border-radius:5px 5px 0 0;position:relative;min-width:0}
+  .trend .tb span{position:absolute;bottom:-16px;left:0;right:0;text-align:center;font-size:10px;color:var(--sub)}
+  .foot{font-size:11.5px;color:#94a3b8;text-align:center;margin-top:22px;line-height:1.7}
+  .toast{position:fixed;left:50%;top:24px;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;z-index:50}
+  .toast.show{opacity:1}
+  .loading{text-align:center;padding:40px 10px;color:var(--sub);font-size:14px}
+  .hide{display:none}
+  /* modal */
+  .mask{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;padding:18px;z-index:60}
+  .mask.show{display:flex}
+  .modal{background:#fff;border-radius:18px;max-width:560px;width:100%;max-height:82vh;overflow:auto;padding:18px 16px}
+  .modal h2{font-size:16px;margin:0 0 12px;color:#334155}
+  .modal .close{float:right;background:none;border:none;font-size:20px;color:var(--sub);cursor:pointer;margin-top:-6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>七上语文 · 水平诊断测试</h1>
+    <p>依据《七年级上册语文（部编版）》全册，可随机出题 / AI 重新出题，自动判分并记录成绩</p>
+    <div class="meta">
+      <span class="chip">可选单元 / 全学期</span>
+      <span class="chip">本地随机 · AI 出题</span>
+      <span class="chip">自动判分 + 水平等级</span>
+      <span class="chip">记录人 / 时间 / 成绩</span>
+    </div>
+  </header>
+
+  <!-- ============ 开始页 ============ -->
+  <div id="startScreen">
+    <div class="card">
+      <h2>① 基本信息（用于记录成绩）</h2>
+      <div class="row2">
+        <div class="field">
+          <label>姓名 *</label>
+          <input type="text" id="stuName" placeholder="如：小明" maxlength="12">
+        </div>
+        <div class="field">
+          <label>班级（可选）</label>
+          <input type="text" id="stuClass" placeholder="如：七(3)班" maxlength="12">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>② 出题范围</h2>
+      <div class="field">
+        <label>选择单元（点选；或一键选全学期）</label>
+        <div class="units" id="units"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>③ 题目设置</h2>
+      <div class="row2">
+        <div class="field">
+          <label>题目数量</label>
+          <input type="number" id="qCount" value="20" min="5" max="60">
+        </div>
+        <div class="field">
+          <label>出题方式</label>
+          <div class="modes">
+            <div class="mode on" id="mLocal" onclick="setMode('local')">本地随机<small>不耗 API</small></div>
+            <div class="mode" id="mAI" onclick="setMode('ai')">AI 重新出题<small>消耗 API</small></div>
+          </div>
+        </div>
+      </div>
+      <div class="apibox hide" id="aiNote">
+        需要在本机先填 DeepSeek API Key（与「学习小助手」共用，同域名已自动读取）。未填或调用失败时会自动改用本地题库随机出题。
+        <input type="text" id="apiKey" placeholder="sk-...（可选，留空则用已保存的 Key）" style="width:100%">
+      </div>
+      <button class="linkbtn" onclick="openHistory()">📒 查看历史成绩</button>
+    </div>
+
+    <button class="btn" onclick="startTest()">开始测试 ▶</button>
+  </div>
+
+  <!-- ============ 答题页 ============ -->
+  <div id="quizScreen" class="hide">
+    <div class="card" style="padding:12px 14px">
+      <div style="font-size:13px;color:#475569" id="quizInfo"></div>
+    </div>
+    <div id="quiz"></div>
+    <button class="btn" id="submitBtn" onclick="grade()">提交并查看成绩 ▶</button>
+    <button class="btn ghost hide" id="retryBtn" onclick="backHome()">返回首页 / 换范围</button>
+  </div>
+
+  <!-- ============ 结果页 ============ -->
+  <div id="resultScreen" class="hide">
+    <div id="result"></div>
+    <div class="card">
+      <h2>📒 历史成绩</h2>
+      <div id="histList"></div>
+    </div>
+    <button class="btn" id="againBtn" onclick="redoSame()">再用同样范围随机出一套 ▶</button>
+    <button class="btn ghost" onclick="backHome()">返回首页 / 换范围</button>
+  </div>
+
+  <div class="foot">
+    本测试题目依据教材重点篇目、古诗文、名著与基础知识整理或经 AI 生成，仅供家庭自测参考。<br>
+    建议孩子独立作答，再对照解析订正，效果最好。
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 历史弹窗 -->
+<div class="mask" id="histMask">
+  <div class="modal">
+    <button class="close" onclick="closeHistory()">×</button>
+    <h2>📒 历史成绩记录</h2>
+    <div id="histModalList"></div>
+    <div style="margin-top:10px;text-align:right">
+      <button class="linkbtn" onclick="clearHistory()">清空全部记录</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===================== 单元定义 ===================== */
+const UNITS=[
+  {k:'C1',label:'第1单元 现代文阅读',full:'第1单元 现代文阅读（记叙文/散文）'},
+  {k:'C2',label:'第2单元 古诗文',full:'第2单元 古诗文（诗歌+文言文）'},
+  {k:'C3',label:'第3单元 名著阅读',full:'第3单元 名著阅读（《朝花夕拾》《西游记》）'},
+  {k:'C4',label:'第4单元 基础运用',full:'第4单元 基础与语言运用'},
+];
+const UNIT_FULL=new Set(UNITS.map(u=>u.full));
+
+/* ===================== 题库（按单元扩充） ===================== */
+const BANK=[
+{u:'第1单元 现代文阅读（记叙文/散文）',part:'作者',q:'《春》的作者是？',b:'',opts:['朱自清','老舍','巴金','冰心'],a:0},
+{u:'第1单元 现代文阅读（记叙文/散文）',part:'作者',q:'《济南的冬天》的作者是？',b:'',opts:['老舍','朱自清','鲁迅','叶圣陶'],a:0},
+{u:'第1单元 现代文阅读（记叙文/散文）',part:'内容',q:'《春》中描写春天的景物，不包括下列哪一项？',b:'',opts:['白雪','春草','春花','春风'],a:0},
+{u:'第1单元 现代文阅读（记叙文/散文）',part:'修辞',q:'《春》中“吹面不寒杨柳风”运用了哪种修辞手法？',b:'',opts:['引用','比喻','排比','夸张'],a:0,exp:'引用了志南和尚的诗句。'},
+{u:'第1单元 现代文阅读（记叙文/散文）',part:'作者',q:'《秋天的怀念》的作者是？',b:'',opts:['史铁生','朱自清','老舍','鲁迅'],a:0},
+{u:'第1单元 现代文阅读（记叙文/散文）',part:'内容',q:'《散步》中“我”在岔路口选择走大路，主要是因为？',b:'',opts:['想顺从年迈的母亲','小路不好走','母亲想走小路','孩子想走大路'],a:0,exp:'体现尊老爱幼的传统美德。'},
+{u:'第1单元 现代文阅读（记叙文/散文）',part:'字词',q:'下列词语书写完全正确的一项是？',b:'',opts:['贮蓄','骄媚','决别','分岐'],a:0,exp:'应为娇媚、诀别、分歧。'},
+{u:'第1单元 现代文阅读（记叙文/散文）',part:'修辞',q:'“盼望着，盼望着，东风来了，春天的脚步近了”使用的修辞是？',b:'',opts:['反复、拟人','比喻、夸张','排比、对偶','设问、反问'],a:0,exp:'两个“盼望着”是反复，把春天当人写是拟人。'},
+{u:'第1单元 现代文阅读（记叙文/散文）',part:'文体',q:'记叙文的六要素不包括下列哪一项？',b:'',opts:['环境描写','时间','地点','人物'],a:0,exp:'六要素：时间、地点、人物、起因、经过、结果。'},
+{u:'第1单元 现代文阅读（记叙文/散文）',part:'作者',q:'《从百草园到三味书屋》出自鲁迅的哪部作品？',b:'',opts:['《朝花夕拾》','《呐喊》','《彷徨》','《故事新编》'],a:0},
+{u:'第1单元 现代文阅读（记叙文/散文）',part:'修辞',q:'下列句子中，运用了比喻修辞的是？',b:'',opts:['春天像小姑娘，花枝招展的','他跑得很快','这朵花真香','我们出发了'],a:0},
+{u:'第1单元 现代文阅读（记叙文/散文）',part:'作者',q:'《雨的四季》的作者是？',b:'',opts:['刘湛秋','朱自清','老舍','冰心'],a:0},
+{u:'第1单元 现代文阅读（记叙文/散文）',part:'内容',q:'下列关于《春》的说法，错误的一项是？',b:'',opts:['《春》是一篇小说','《春》是写景抒情散文','作者朱自清','文中有“一年之计在于春”'],a:0},
+{u:'第1单元 现代文阅读（记叙文/散文）',part:'诗句',q:'“沾衣欲湿杏花雨，吹面不寒杨柳风”描写的是哪个季节？',b:'',opts:['春天','夏天','秋天','冬天'],a:0},
+{u:'第1单元 现代文阅读（记叙文/散文）',part:'字词',q:'下列词语中，与“繁花嫩叶”结构相同的一项是？',b:'',opts:['清风明月','调查研究','打扫干净','看得清楚'],a:0,exp:'“繁花嫩叶”“清风明月”都是并列结构。'},
+{u:'第1单元 现代文阅读（记叙文/散文）',part:'内容',q:'《济南的冬天》中，作者认为济南冬天最突出的特点是？',b:'',opts:['温晴','寒冷','多雪','潮湿'],a:0,exp:'“温晴”是贯穿全文的核心词。'},
+{u:'第2单元 古诗文（诗歌+文言文）',part:'作者',q:'《观沧海》的作者是？',b:'',opts:['曹操','李白','杜甫','白居易'],a:0},
+{u:'第2单元 古诗文（诗歌+文言文）',part:'默写',q:'“日月之行，若出其中”出自哪篇作品？',b:'',opts:['《观沧海》','《次北固山下》','《天净沙·秋思》','《闻王昌龄左迁龙标遥有此寄》'],a:0},
+{u:'第2单元 古诗文（诗歌+文言文）',part:'作者',q:'《闻王昌龄左迁龙标遥有此寄》的作者是？',b:'',opts:['李白','王昌龄','杜甫','王维'],a:0},
+{u:'第2单元 古诗文（诗歌+文言文）',part:'词义',q:'“我寄愁心与明月”中“与”的意思是？',b:'',opts:['给、托付','和','同','比'],a:0},
+{u:'第2单元 古诗文（诗歌+文言文）',part:'作者',q:'《次北固山下》的作者是？',b:'',opts:['王湾','王维','王勃','王安石'],a:0},
+{u:'第2单元 古诗文（诗歌+文言文）',part:'赏析',q:'“海日生残夜，江春入旧年”蕴含的哲理是？',b:'',opts:['新事物孕育于旧事物之中','要珍惜时间','友情可贵','思乡之情'],a:0},
+{u:'第2单元 古诗文（诗歌+文言文）',part:'作者',q:'《天净沙·秋思》的作者是？',b:'',opts:['马致远','白朴','关汉卿','张养浩'],a:0},
+{u:'第2单元 古诗文（诗歌+文言文）',part:'赏析',q:'“小桥流水人家”在《天净沙·秋思》中的作用是？',b:'',opts:['以乐景写哀情，反衬愁苦','描写欢乐场景','点明时间','交代地点'],a:0},
+{u:'第2单元 古诗文（诗歌+文言文）',part:'词义',q:'《天净沙·秋思》中“秋思”的“思”指？',b:'',opts:['思绪、愁思','思考','思念朋友','思想'],a:0},
+{u:'第2单元 古诗文（诗歌+文言文）',part:'常识',q:'《论语》主要记录谁及其弟子的言行？',b:'',opts:['孔子','孟子','老子','庄子'],a:0},
+{u:'第2单元 古诗文（诗歌+文言文）',part:'文言',q:'“学而时习之，不亦说乎”中“说”通？',b:'',opts:['悦','阅','乐','越'],a:0,exp:'“说”通“悦”，愉快。'},
+{u:'第2单元 古诗文（诗歌+文言文）',part:'文言',q:'“吾日三省吾身”中“三省”意思是？',b:'',opts:['多次反省','正好三次反省','三省（官名）','省悟'],a:0},
+{u:'第2单元 古诗文（诗歌+文言文）',part:'文言',q:'“温故而知新，可以为师矣”强调的学习方法是？',b:'',opts:['复习旧知识得到新理解','只学新知识','死记硬背','多刷题'],a:0},
+{u:'第2单元 古诗文（诗歌+文言文）',part:'文言',q:'《论语》中“知之者不如好之者，好之者不如乐之者”谈的是？',b:'',opts:['学习的兴趣','学习的方法','谦虚的态度','温习的重要'],a:0},
+{u:'第2单元 古诗文（诗歌+文言文）',part:'文言',q:'“三人行，必有我师焉”说明？',b:'',opts:['要虚心向别人学习','三个人一起走路','老师很重要','要结伴学习'],a:0},
+{u:'第2单元 古诗文（诗歌+文言文）',part:'文言',q:'《诫子书》的作者是？',b:'',opts:['诸葛亮','刘备','曹操','周瑜'],a:0,exp:'《诫子书》是诸葛亮写给儿子的信。'},
+{u:'第3单元 名著阅读（《朝花夕拾》《西游记》）',part:'常识',q:'《朝花夕拾》的作者是？',b:'',opts:['鲁迅','老舍','郭沫若','茅盾'],a:0},
+{u:'第3单元 名著阅读（《朝花夕拾》《西游记》）',part:'文体',q:'《朝花夕拾》是一部？',b:'',opts:['散文集','小说集','诗歌集','戏剧集'],a:0,exp:'原名《旧事重提》。'},
+{u:'第3单元 名著阅读（《朝花夕拾》《西游记》）',part:'篇目',q:'《朝花夕拾》中描写童年渴望看“五猖会”的篇目是？',b:'',opts:['《五猖会》','《从百草园到三味书屋》','《藤野先生》','《范爱农》'],a:0},
+{u:'第3单元 名著阅读（《朝花夕拾》《西游记》）',part:'人物',q:'《从百草园到三味书屋》中教作者读书的老师是？',b:'',opts:['寿镜吾先生','藤野先生','闰土的父亲','阿长'],a:0},
+{u:'第3单元 名著阅读（《朝花夕拾》《西游记》）',part:'篇目',q:'《阿长与〈山海经〉》中，阿长为“我”买来了？',b:'',opts:['《山海经》','《二十四孝图》','《天演论》','《荡寇志》'],a:0},
+{u:'第3单元 名著阅读（《朝花夕拾》《西游记》）',part:'常识',q:'《西游记》的作者是？',b:'',opts:['吴承恩','罗贯中','施耐庵','曹雪芹'],a:0},
+{u:'第3单元 名著阅读（《朝花夕拾》《西游记》）',part:'情节',q:'孙悟空大闹天宫后被如来佛祖压在？',b:'',opts:['五行山','花果山','火焰山','五指山'],a:0},
+{u:'第3单元 名著阅读（《朝花夕拾》《西游记》）',part:'人物',q:'唐僧的大徒弟是？',b:'',opts:['孙悟空','猪八戒','沙僧','白龙马'],a:0},
+{u:'第3单元 名著阅读（《朝花夕拾》《西游记》）',part:'人物',q:'猪八戒的原身是？',b:'',opts:['天蓬元帅','卷帘大将','金蝉子','东海龙王'],a:0},
+{u:'第3单元 名著阅读（《朝花夕拾》《西游记》）',part:'人物',q:'沙僧的原身是？',b:'',opts:['卷帘大将','天蓬元帅','二郎神','牛魔王'],a:0},
+{u:'第3单元 名著阅读（《朝花夕拾》《西游记》）',part:'情节',q:'《西游记》中“三打白骨精”，白骨精先后变成？',b:'',opts:['村姑、老妇、老翁','老翁、村姑、老妇','妖怪、神仙、凡人','老虎、兔子、狐狸'],a:0,exp:'白骨精三变迷惑唐僧。'},
+{u:'第3单元 名著阅读（《朝花夕拾》《西游记》）',part:'兵器',q:'孙悟空的兵器是？',b:'',opts:['如意金箍棒','九齿钉耙','降妖宝杖','芭蕉扇'],a:0},
+{u:'第3单元 名著阅读（《朝花夕拾》《西游记》）',part:'常识',q:'唐僧师徒去西天取经，“西天”指？',b:'',opts:['天竺（古印度）','波斯','西域','长安'],a:0},
+{u:'第3单元 名著阅读（《朝花夕拾》《西游记》）',part:'情节',q:'下列关于《西游记》的说法，错误的是？',b:'',opts:['唐僧是孙悟空的大徒弟','孙悟空会七十二变','猪八戒贪吃偷懒','历经九九八十一难'],a:0},
+{u:'第3单元 名著阅读（《朝花夕拾》《西游记》）',part:'人物',q:'《朝花夕拾》中给“我”买来《山海经》的是？',b:'',opts:['阿长','父亲','寿镜吾先生','闰土'],a:0},
+{u:'第3单元 名著阅读（《朝花夕拾》《西游记》）',part:'语句',q:'“皇帝轮流做，明年到我家”这句话出自？',b:'',opts:['《西游记》','《红楼梦》','《水浒传》','《三国演义》'],a:0,exp:'出自孙悟空之口。'},
+{u:'第4单元 基础与语言运用',part:'字词',q:'下列词语书写完全正确的一项是？',b:'',opts:['宽敞','缭亮','粗旷','取诀'],a:0,exp:'应为嘹亮、粗犷、取决。'},
+{u:'第4单元 基础与语言运用',part:'病句',q:'下列句子没有语病的一项是？',b:'',opts:['我们要养成认真读书的习惯','通过老师的帮助，使我进步很大','他对自己能否学好语文充满信心','这篇报道控诉了人类破坏自然的行为'],a:0,exp:'B缺主语，C两面对一面，D搭配不当。'},
+{u:'第4单元 基础与语言运用',part:'标点',q:'下列句子标点使用正确的一项是？',b:'',opts:['提示语在后的句子，句号应放在引号内','提示语在后的句子，句号应放在引号外','说话内容后面用逗号','说话内容后面用叹号'],a:0,exp:'提示语在后时，引号内用句末点号。'},
+{u:'第4单元 基础与语言运用',part:'修辞',q:'下列修辞手法判断正确的是？',b:'',opts:['春天像刚落地的娃娃——比喻','他像他爸爸——比喻','太阳出来了——拟人','这本书看得完——夸张'],a:0,exp:'“他像他爸爸”是比较，不是比喻。'},
+{u:'第4单元 基础与语言运用',part:'修辞',q:'“盼望着，盼望着”运用的修辞是？',b:'',opts:['反复','排比','对偶','设问'],a:0},
+{u:'第4单元 基础与语言运用',part:'词义',q:'下列词语中，与“喜欢”意思最相近的是？',b:'',opts:['喜爱','讨厌','害怕','忘记'],a:0},
+{u:'第4单元 基础与语言运用',part:'词义',q:'“参差不齐”形容？',b:'',opts:['长短、高低不齐','非常整齐','色彩鲜艳','速度很快'],a:0},
+{u:'第4单元 基础与语言运用',part:'句式',q:'下列句子属于陈述句的是？',b:'',opts:['今天天气真好','今天天气好吗？','今天天气真好啊！','快走！'],a:0},
+{u:'第4单元 基础与语言运用',part:'名句',q:'“一年之计在于春”的下半句是？',b:'',opts:['一日之计在于晨','一天之计在于午','一生之计在于秋','一时之计在于冬'],a:0},
+{u:'第4单元 基础与语言运用',part:'词语',q:'下列词语中，描写秋天景物的是？',b:'',opts:['秋高气爽','春暖花开','骄阳似火','冰天雪地'],a:0},
+{u:'第4单元 基础与语言运用',part:'短语',q:'下列短语结构与其他三项不同的是？',b:'',opts:['热烈欢迎','红旗飘扬','文化传承','阳光灿烂'],a:0,exp:'“热烈欢迎”是偏正结构，其余是主谓结构。'},
+{u:'第4单元 基础与语言运用',part:'词义',q:'“吹面不寒杨柳风”中的“杨柳风”指？',b:'',opts:['春风','秋风','冬风','夏风'],a:0},
+{u:'第4单元 基础与语言运用',part:'修辞',q:'下列句子运用了拟人修辞的是？',b:'',opts:['小草偷偷地从土里钻出来','他跑得像风一样快','这朵花真美','书放在桌上'],a:0},
+{u:'第4单元 基础与语言运用',part:'修辞',q:'“油蛉在这里低唱，蟋蟀们在这里弹琴”运用的修辞是？',b:'',opts:['拟人','比喻','夸张','排比'],a:0},
+{u:'第4单元 基础与语言运用',part:'字词',q:'下列词语书写有误的一项是？',b:'',opts:['瞭亮（应为嘹亮）','宽敞','静谧','吝啬'],a:0},
+{u:'第4单元 基础与语言运用',part:'词义',q:'“呼朋引伴”中“引”的意思是？',b:'',opts:['招引','引用','引导','拉'],a:0}
+];
+
+/* ===================== 状态 ===================== */
+const answers={};
+let Q=[];
+let currentName='', lastCount=20, lastAI=false, lastScopeText='全学期';
+let mode='local';
+const selectedUnits=new Set(UNITS.map(u=>u.full));
+
+/* ===================== 工具 ===================== */
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1500);}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+/* 打乱单题选项，使正确项下标随机分布（题库里 a 多固定为 0，必须重排） */
+function shuffleOptions(q){
+  const idx=[0,1,2,3];
+  for(let i=idx.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
+  return Object.assign({},q,{opts:idx.map(k=>q.opts[k]),a:idx.indexOf(q.a)});
+}
+function $(id){return document.getElementById(id);}
+
+/* ===================== 开始页渲染 ===================== */
+function renderUnits(){
+  const box=$('units');
+  let html='<span class="uchip all on" id="uAll" onclick="toggleAll()">📚 全学期</span>';
+  html+=UNITS.map(u=>`<span class="uchip on" data-k="${u.full}" onclick="toggleUnit('${u.full}')">${u.label}</span>`).join('');
+  box.innerHTML=html;
+}
+function toggleAll(){
+  UNITS.forEach(u=>selectedUnits.add(u.full));
+  document.querySelectorAll('#units .uchip').forEach(c=>c.classList.add('on'));
+}
+function toggleUnit(full){
+  // 点具体单元时，取消“全学期”高亮，转为自选
+  $('uAll').classList.remove('on');
+  if(selectedUnits.has(full)){selectedUnits.delete(full);}
+  else{selectedUnits.add(full);}
+  const chip=document.querySelector(`#units .uchip[data-k="${CSS.escape(full)}"]`);
+  if(chip)chip.classList.toggle('on',selectedUnits.has(full));
+}
+function setMode(m){
+  mode=m;
+  $('mLocal').classList.toggle('on',m==='local');
+  $('mAI').classList.toggle('on',m==='ai');
+  $('aiNote').classList.toggle('hide',m!=='ai');
+}
+renderUnits();
+setMode('local');
+
+/* ===================== 开始测试 ===================== */
+function startTest(){
+  const name=($('stuName').value||'').trim();
+  if(!name){toast('请输入姓名以便记录成绩');$('stuName').focus();return;}
+  if(selectedUnits.size===0){toast('请至少选择一个单元');return;}
+  let count=parseInt($('qCount').value)||20;
+  count=Math.max(5,Math.min(60,count));
+  currentName=name; lastCount=count; lastAI=(mode==='ai');
+  lastScopeText = selectedUnits.size===UNITS.length ? '全学期' : [...selectedUnits].sort().join('、');
+
+  if(mode==='ai'){ generateAI(count); }
+  else { buildLocal(count); }
+}
+
+/* 本地随机抽题（按比例分布到所选单元） */
+function buildLocal(count){
+  const sel=[...selectedUnits];
+  const byUnit={};
+  sel.forEach(u=>byUnit[u]=shuffle(BANK.filter(x=>x.u===u)));
+  let per=Math.max(1,Math.floor(count/sel.length));
+  let picked=[];
+  sel.forEach(u=>{ picked=picked.concat(byUnit[u].slice(0,per)); });
+  // 补足
+  let rest=count-picked.length;
+  if(rest>0){
+    let pool=[];
+    sel.forEach(u=>{ const used=new Set(picked.filter(x=>x.u===u)); byUnit[u].forEach(x=>{if(!used.has(x))pool.push(x);}); });
+    pool=shuffle(pool);
+    picked=picked.concat(pool.slice(0,rest));
+  }
+  picked=shuffle(picked).slice(0,count);
+  beginQuiz(picked,'本地随机');
+}
+
+/* AI 重新出题（消耗 API） */
+async function generateAI(count){
+  const KEY=($('apiKey').value||'').trim() || localStorage.getItem('ctest_key') || localStorage.getItem('ds_key') || '';
+  if(KEY) localStorage.setItem('ctest_key',KEY);
+  if(!KEY){
+    toast('未设置 API Key，已改用本地题库随机出题');
+    buildLocal(count); return;
+  }
+  showQuizLoading('🤖 AI 正在按所选单元重新出题，请稍候…');
+  const unitsText=[...selectedUnits].sort().join('、');
+  const prompt=`你是一位七年级上册语文（部编版）出题老师。请根据七年级上册语文范围（现代文阅读、古诗文、名著阅读、基础与语言运用），为以下单元出 ${count} 道四选一选择题，用于学生水平诊断。
+要求：
+1. 单元范围（u 只能取以下之一）：${unitsText}
+2. 题型混合：现代文阅读理解、古诗文默写与赏析、名著情节、字音字形/词语/修辞/病句 都可有，难度为七年级上学期。
+3. 每题返回 JSON 对象，字段严格为：
+   - u：单元名（必须是上面给定的单元之一）
+   - q：题干（可含换行，用 \\n 表示）
+   - b：题干前置背景/短文，没有则空字符串 ""
+   - opts：长度为 4 的字符串数组（选项）
+   - a：正确答案下标（0-3 的整数）
+   - exp：中文解析（一句话说明考点）
+4. 只输出一个 JSON 数组，不要任何解释文字，不要使用 markdown 代码块标记。
+5. 共 ${count} 题，务必凑足数量。`;
+  try{
+    const resp=await fetch('https://api.deepseek.com/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY},
+      body:JSON.stringify({model:'deepseek-chat',messages:[{role:'system',content:'你是严谨的七年级语文（部编版）老师，只输出符合要求的 JSON。'},{role:'user',content:prompt}],temperature:0.9,max_tokens:3500})
+    });
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const d=await resp.json();
+    const content=d.choices?.[0]?.message?.content||'';
+    const qs=parseAI(content);
+    if(qs.length<3) throw new Error('生成题目过少');
+    beginQuiz(qs,'AI 出题');
+  }catch(e){
+    console.error(e);
+    toast('AI 出题失败（'+e.message+'），已改用本地题库随机出题');
+    buildLocal(count);
+  }
+}
+function parseAI(text){
+  let t=(text||'').trim().replace(/```json/gi,'').replace(/```/g,'').trim();
+  // 截取第一个 [ 到最后一个 ]
+  const s=t.indexOf('['), e=t.lastIndexOf(']');
+  if(s>=0&&e>t) t=t.slice(s,e+1);
+  let arr;
+  try{ arr=JSON.parse(t); }catch(_){ return []; }
+  if(!Array.isArray(arr)) return [];
+  return arr.filter(x=>{
+    if(!x||!Array.isArray(x.opts)||x.opts.length!==4||!x.q) return false;
+    const ai=Number(x.a);
+    return Number.isInteger(ai)&&ai>=0&&ai<4;
+  }).map(x=>({u:(UNIT_FULL.has(x.u)?x.u:UNITS[0].full),q:String(x.q),b:String(x.b||''),opts:x.opts.map(String),a:Number(x.a),exp:String(x.exp||''),part:''}));
+}
+
+/* ===================== 渲染答题 ===================== */
+function showQuizLoading(msg){
+  $('startScreen').classList.add('hide');
+  $('resultScreen').classList.add('hide');
+  $('quizScreen').classList.remove('hide');
+  $('submitBtn').classList.add('hide');
+  $('retryBtn').classList.add('hide');
+  $('quiz').innerHTML='<div class="loading">'+msg+'</div>';
+  window.scrollTo(0,0);
+}
+function beginQuiz(questions,srcLabel){
+  Q=questions.map(shuffleOptions);
+  for(const k in answers) delete answers[k];
+  const quizEl=$('quiz');
+  quizEl.innerHTML='';
+  Q.forEach((it,i)=>{
+    const qid='q'+i;
+    const optsHtml=it.opts.map((o,ki)=>
+      `<button class="opt" id="o-${qid}-${ki}" onclick="pick('${qid}',${ki})"><span class="k">${String.fromCharCode(65+ki)}.</span>${esc(o)}</button>`
+    ).join('');
+    const div=document.createElement('div');
+    div.className='q';
+    div.innerHTML=`<div class="q-h">第 ${i+1} 题<span class="tag">${esc(it.u)}</span></div>`+
+      (it.b?`<div class="q-b">${esc(it.b)}</div>`:'')+
+      `<div class="q-b">${esc(it.q)}</div>`+
+      optsHtml+
+      `<div class="exp" id="exp-${qid}">${it.exp?('💡 '+esc(it.exp)):''}</div>`;
+    quizEl.appendChild(div);
+  });
+  $('quizInfo').textContent=`考生：${currentName}（${($('stuClass').value||'').trim()||'—'}） ｜ 范围：${lastScopeText} ｜ 共 ${questions.length} 题 ｜ 来源：${srcLabel}`;
+  $('startScreen').classList.add('hide');
+  $('resultScreen').classList.add('hide');
+  $('quizScreen').classList.remove('hide');
+  $('submitBtn').classList.remove('hide');
+  $('retryBtn').classList.add('hide');
+  window.scrollTo(0,0);
+}
+function pick(qid,ki){
+  answers[qid]=ki;
+  for(let k=0;k<10;k++){
+    const el=document.getElementById('o-'+qid+'-'+k);
+    if(el) el.classList.toggle('sel',k===ki);
+  }
+}
+
+/* ===================== 判分 ===================== */
+function grade(){
+  if(Q.length===0) return;
+  let unanswered=0,first=null;
+  for(let i=0;i<Q.length;i++){const qid='q'+i;if(answers[qid]===undefined){unanswered++;if(!first)first=qid;}}
+  if(unanswered>0){
+    toast('还有 '+unanswered+' 题没答，请完成全部 '+Q.length+' 题');
+    if(first){const el=document.getElementById('o-'+first+'-0');if(el)el.closest('.q').scrollIntoView({behavior:'smooth',block:'center'});}
+    return;
+  }
+  let correct=0;const wrongUnits={},unitTotal={};
+  for(let i=0;i<Q.length;i++){
+    const qid='q'+i;const it=Q[i];
+    unitTotal[it.u]=(unitTotal[it.u]||0)+1;
+    const chosen=answers[qid];
+    const opts=it.opts.map((o,k)=>document.getElementById('o-'+qid+'-'+k));
+    const expEl=document.getElementById('exp-'+qid);
+    opts[it.a].classList.add('correct');
+    if(chosen===it.a){correct++;}
+    else{opts[chosen].classList.add('wrong');wrongUnits[it.u]=(wrongUnits[it.u]||0)+1;}
+    if(it.exp)expEl.classList.add('show');
+    opts.forEach(o=>o.onclick=null);
+  }
+  showResult(correct,Q.length,wrongUnits,unitTotal);
+}
+
+function showResult(correct,total,wrongUnits,unitTotal){
+  const score=Math.round(correct/total*100);
+  let level,lvlColor,comment;
+  if(score>=90){level='优秀 A';lvlColor='var(--ok)';comment='七上科学掌握扎实，各章核心概念与实验探究都过关，可挑战综合应用题。';}
+  else if(score>=75){level='良好 B';lvlColor='var(--brand)';comment='基本达标，个别语法点需巩固。对照解析把错题库再刷一遍即可稳住。';}
+  else if(score>=60){level='合格 C';lvlColor='var(--warn)';comment='有薄弱单元，建议按下方“薄弱项”优先复习对应单元的重点词组与语法。';}
+  else {level='待提升 D';lvlColor='var(--bad)';comment='建议从 Starter Unit 与 be 动词、三单、there be 等基础语法重新抓起，先背熟词组再练题。';}
+
+  const rows=Object.keys(unitTotal).map(u=>({
+    u,total:unitTotal[u],wrong:wrongUnits[u]||0,
+    pc:unitTotal[u]?Math.round((wrongUnits[u]||0)/unitTotal[u]*100):0
+  })).sort((a,b)=>b.pc-a.pc);
+  const weakRows=rows.map(r=>
+    `<div class="wrow"><div class="lbl">${r.u}</div><div class="wb"><i style="width:${r.pc}%"></i></div><div class="pc">${r.wrong}/${r.total}</div></div>`
+  ).join('')||'<div class="sum">🎉 全单元零失误，非常棒！</div>';
+
+  let advice='';
+  const top=rows.find(r=>r.wrong>0);
+  if(top){
+    const map={
+      '第1单元 现代文阅读（记叙文/散文）':'复习重点篇目的作者、主旨与修辞（比喻、拟人、反复、引用），熟读《春》《济南的冬天》等名段。',
+      '第2单元 古诗文（诗歌+文言文）':'背诵默写四首古诗与《论语》名句，掌握重点文言词义（说通悦、三省等）与诗句赏析。',
+      '第3单元 名著阅读（《朝花夕拾》《西游记》）':'梳理《朝花夕拾》主要篇目与人物，巩固《西游记》主要情节、人物与原身。',
+      '第4单元 基础与语言运用':'巩写字音字形、词语辨析、常见修辞（比喻/拟人/反复）、病句与标点，多做基础练习。'
+    };
+    advice=`<div class="adv"><b>📌 复习建议：</b>最薄弱的是 <b>${top.u}</b>（错 ${top.wrong}/${top.total}）。${map[top.u]||''}</div>`;
+  }
+
+  const res=$('result');
+  res.innerHTML=`
+    <div class="res">
+      <div style="font-size:13px;color:#475569;text-align:center">考生：${esc(currentName)}（${esc(($('stuClass').value||'').trim()||'—')}）｜ 范围：${esc(lastScopeText)}｜ ${new Date().toLocaleString('zh-CN')}</div>
+      <div class="score" style="margin-top:10px">
+        <div class="num" style="color:${lvlColor}">${score}</div>
+        <div class="level" style="background:${lvlColor}">${level}</div>
+        <div class="sum">答对 ${correct} / ${total} 题 · 满分 100</div>
+      </div>
+      <div class="bar"><i style="width:${score}%"></i></div>
+      <div class="sum">${comment}</div>
+      <div class="weak">
+        <h3>📊 各单元正确率（薄弱项排序）</h3>
+        ${weakRows}
+      </div>
+      ${advice}
+      <div class="adv" style="background:#eff6ff;border-color:#bfdbfe;color:#1e40af;margin-top:14px">✅ 本次成绩已自动记录到本机（含姓名、时间、范围、分数与各单元正确率）。可在下方或“查看历史成绩”回看。</div>
+    </div>`;
+
+  // 记录
+  saveRecord({name:currentName,cls:($('stuClass').value||'').trim(),scope:lastScopeText,score,total,correct,
+    dt:new Date().toISOString(),dtDisplay:new Date().toLocaleString('zh-CN'),
+    breakdown:rows.map(r=>({u:r.u,total:r.total,wrong:r.wrong}))});
+
+  $('quizScreen').classList.add('hide');
+  $('resultScreen').classList.remove('hide');
+  renderHistory($('histList'));
+  $('resultScreen').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ===================== 成绩记录 ===================== */
+function saveRecord(rec){
+  let h=[];
+  try{h=JSON.parse(localStorage.getItem('ctest_history')||'[]');}catch(_){}
+  h.unshift(rec);
+  if(h.length>50)h=h.slice(0,50);
+  localStorage.setItem('ctest_history',JSON.stringify(h));
+}
+function renderHistory(container){
+  let h=[];
+  try{h=JSON.parse(localStorage.getItem('ctest_history')||'[]');}catch(_){}
+  if(!h.length){container.innerHTML='<div class="sum">暂无记录，做完一套测试就会显示在这里。</div>';return;}
+  const rows=h.map(r=>`<div class="hrow"><span class="hn">${esc(r.name)}</span><span class="hd">${esc(r.scope)}</span><span class="hs">${r.score}分</span><span class="ht">${esc(r.dtDisplay)}</span></div>`).join('');
+  // 走势（最近 8 次）
+  const recent=h.slice(0,8).reverse();
+  const trend=recent.map(r=>`<div class="tb" style="height:${Math.max(6,r.score*0.55)}px" title="${r.score}"><span>${r.score}</span></div>`).join('');
+  container.innerHTML=`<div class="trend">${trend}</div><div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:8px">最近 ${recent.length} 次得分走势</div>`+rows;
+}
+function openHistory(){
+  renderHistory($('histModalList'));
+  $('histMask').classList.add('show');
+}
+function closeHistory(){$('histMask').classList.remove('show');}
+function clearHistory(){
+  if(confirm('确定清空全部历史成绩记录？此操作不可恢复。')){
+    localStorage.removeItem('ctest_history');
+    renderHistory($('histModalList'));renderHistory($('histList'));
+    toast('已清空历史记录');
+  }
+}
+$('histMask').addEventListener('click',e=>{if(e.target.id==='histMask')closeHistory();});
+
+/* ===================== 导航 ===================== */
+function backHome(){
+  $('quizScreen').classList.add('hide');
+  $('resultScreen').classList.add('hide');
+  $('startScreen').classList.remove('hide');
+  window.scrollTo(0,0);
+}
+function redoSame(){
+  if(lastAI){ generateAI(lastCount); }
+  else { buildLocal(lastCount); }
+}
+</script>
+</body>
+</html>
