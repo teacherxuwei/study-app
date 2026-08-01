@@ -501,7 +501,7 @@ function beginQuiz(questions,srcLabel){
   for(const k in answers) delete answers[k];
   const quizEl=$('quiz');
   quizEl.innerHTML='';
-  questions.forEach((it,i)=>{
+  Q.forEach((it,i)=>{
     const qid='q'+i;
     const optsHtml=it.opts.map((o,ki)=>
       `<button class="opt" id="o-${qid}-${ki}" onclick="pick('${qid}',${ki})"><span class="k">${String.fromCharCode(65+ki)}.</span>${esc(o)}</button>`
