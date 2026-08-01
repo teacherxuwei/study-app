@@ -115,6 +115,13 @@
   #etest-bar .etest-back{background:none;border:none;color:#fff;font-size:15px;font-weight:700;padding:0 14px;cursor:pointer;height:100%}
   #etest-bar .etest-t{font-size:14px;font-weight:700;opacity:.95}
   #etest-frame iframe{flex:1;width:100%;border:none;background:#f5f7fb}
+  /* ===== 科学水平测试 全屏浮层 ===== */
+  #stest-frame{position:fixed;inset:0;z-index:70;background:#fff;display:none;flex-direction:column}
+  #stest-frame.show{display:flex}
+  #stest-bar{flex:none;height:48px;display:flex;align-items:center;background:linear-gradient(135deg,#0d9488,#16a34a);color:#fff;box-shadow:0 2px 8px rgba(15,23,42,.12)}
+  #stest-bar .stest-back{background:none;border:none;color:#fff;font-size:15px;font-weight:700;padding:0 14px;cursor:pointer;height:100%}
+  #stest-bar .stest-t{font-size:14px;font-weight:700;opacity:.95}
+  #stest-frame iframe{flex:1;width:100%;border:none;background:#f5f7fb}
 </style>
 </head>
 <body>
@@ -150,6 +157,12 @@
   <p class="sec-t">③ 语文专属 · 古诗背诵</p>
   <button class="btn" style="width:100%;background:#a855f7" onclick="openPoem()">📜 古诗背诵（从资料库提取）</button>
   <p class="addtip">在 📚 里添加古诗资料（每首空一行、首行写诗名，如「《静夜思》」），即可整首展示、上/下首切换</p>
+</div>
+
+<div class="sec" id="science-sec" style="display:none">
+  <p class="sec-t">③ 科学专属 · 水平诊断</p>
+  <button class="btn" style="width:100%;background:linear-gradient(135deg,#0d9488,#16a34a)" onclick="openStest()">🔬 七上科学水平测试（诊断 + 评分）</button>
+  <p class="addtip">科学测试：可选章节 / 全册，本地随机或 AI 出题，自动判分并记录成绩。</p>
 </div>
 
 <div class="sec">
@@ -288,13 +301,22 @@
   <iframe id="etest-iframe" src="about:blank" title="七上英语水平测试"></iframe>
 </div>
 
+<!-- 科学水平测试 全屏浮层 -->
+<div id="stest-frame">
+  <div id="stest-bar">
+    <button class="stest-back" onclick="closeStest()">← 返回</button>
+    <span class="stest-t">七上科学 · 水平诊断测试</span>
+  </div>
+  <iframe id="stest-iframe" src="about:blank" title="七上科学水平测试"></iframe>
+</div>
+
 <div class="toast" id="toast">已复制 ✓</div>
 
 <script>
 const SUBJECTS = {
   chinese:{label:'语文',e:'📖'}, math:{label:'数学',e:'🔢'}, english:{label:'英语',e:'🔤'},
   history:{label:'历史',e:'🏛️'}, geo:{label:'地理',e:'🌏'}, bio:{label:'生物',e:'🧬'},
-  politics:{label:'道法',e:'⚖️'}
+  politics:{label:'道法',e:'⚖️'}, science:{label:'科学',e:'🔬'}
 };
 const TASKS = [
   {id:'explain',ic:'💡',t:'分步讲题',d:'讲思路+标易错点',needText:true},
@@ -382,7 +404,8 @@ Object.entries(SUBJECTS).forEach(([k,v])=>{
   d.onclick=()=>{curSub=k;document.querySelectorAll('.subj').forEach(x=>x.classList.remove('on'));
     d.classList.add('on');
     document.getElementById('vocab-sec').style.display=(k==='english')?'block':'none';
-    document.getElementById('poem-sec').style.display=(k==='chinese')?'block':'none';};
+    document.getElementById('poem-sec').style.display=(k==='chinese')?'block':'none';
+    document.getElementById('science-sec').style.display=(k==='science')?'block':'none';};
   subsEl.appendChild(d);
 });
 // render tasks
@@ -1007,6 +1030,20 @@ function openEtest(){
 }
 function closeEtest(){
   document.getElementById('etest-frame').classList.remove('show');
+  document.body.style.overflow='';
+}
+// ===== 入口：科学水平测试（全屏内嵌，与主 App 同域名共享 Key/历史）=====
+// STEST_VER 每次升级测试页都需 +1，强制 iframe 重新拉取，绕过 iOS 主屏幕等顽固缓存
+const STEST_VER='20260801a';
+function openStest(){
+  const f=document.getElementById('stest-frame');
+  const ifr=document.getElementById('stest-iframe');
+  ifr.src='science-test.html?v='+STEST_VER;
+  f.classList.add('show');
+  document.body.style.overflow='hidden';
+}
+function closeStest(){
+  document.getElementById('stest-frame').classList.remove('show');
   document.body.style.overflow='';
 }
 </script>

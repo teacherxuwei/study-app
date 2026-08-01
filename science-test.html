@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>七上科学·水平诊断测试</title>
+<style>
+  :root{
+    --brand:#0d9488; --brand2:#16a34a; --bg:#f5f7fb; --card:#fff;
+    --line:#e5e9f2; --sub:#64748b; --ok:#16a34a; --bad:#dc2626; --warn:#d97706;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:#1e293b;line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:720px;margin:0 auto;padding:16px 14px 60px}
+  header{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;border-radius:18px;padding:20px 18px;box-shadow:0 8px 24px rgba(37,99,235,.25)}
+  header h1{margin:0 0 4px;font-size:21px}
+  header p{margin:0;font-size:13px;opacity:.92}
+  .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .chip{background:rgba(255,255,255,.18);padding:4px 10px;border-radius:999px;font-size:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 14px;margin:14px 0;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+  .card h2{font-size:15px;margin:0 0 12px;color:#334155}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;font-weight:700;color:#475569;margin-bottom:6px}
+  .field input[type=text],.field input[type=number]{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:11px;font-size:15px;color:#334155;background:#f8fafc}
+  .field input:focus{outline:none;border-color:var(--brand);background:#fff}
+  .units{display:flex;flex-wrap:wrap;gap:8px}
+  .uchip{padding:8px 12px;border:1.5px solid var(--line);border-radius:11px;font-size:13px;color:#475569;background:#f8fafc;cursor:pointer;user-select:none}
+  .uchip.on{background:#eff6ff;border-color:var(--brand);color:var(--brand);font-weight:700}
+  .uchip.all{background:#eef2ff}
+  .row2{display:flex;gap:10px}
+  .row2 .field{flex:1}
+  .modes{display:flex;gap:8px}
+  .mode{flex:1;text-align:center;padding:12px 8px;border:1.5px solid var(--line);border-radius:12px;font-size:13px;cursor:pointer;background:#f8fafc;color:#475569}
+  .mode.on{background:#eff6ff;border-color:var(--brand);color:var(--brand);font-weight:700}
+  .mode small{display:block;font-size:11px;opacity:.8;margin-top:3px;font-weight:400}
+  .apibox{margin-top:6px;font-size:12px;color:var(--sub);background:#f8fafc;border-radius:10px;padding:10px 12px}
+  .apibox input{margin-top:6px}
+  .btn{display:block;width:100%;border:none;border-radius:14px;padding:15px;font-size:16px;font-weight:800;color:#fff;
+    background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 18px rgba(37,99,235,.3);cursor:pointer;margin-top:6px}
+  .btn:active{transform:scale(.99)}
+  .btn.ghost{background:#eef2ff;color:var(--brand);box-shadow:none}
+  .btn.sm{display:inline-block;width:auto;padding:9px 16px;font-size:13px;margin:0}
+  .linkbtn{background:none;border:none;color:var(--brand);font-size:13px;cursor:pointer;padding:6px 0;text-decoration:underline}
+  /* quiz */
+  .sec-t{font-size:15px;font-weight:800;margin:20px 4px 10px;color:#334155}
+  .q{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 14px 10px;margin-bottom:12px;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+  .q-h{font-size:14px;font-weight:700;margin-bottom:4px}
+  .q-h .tag{font-size:11px;font-weight:600;color:var(--brand);background:#eef2ff;padding:1px 8px;border-radius:999px;margin-left:6px}
+  .q-b{font-size:14px;margin:6px 0 10px;color:#334155}
+  .opt{display:block;width:100%;text-align:left;background:#f8fafc;border:1.5px solid var(--line);border-radius:11px;
+    padding:10px 12px;margin:7px 0;font-size:14px;color:#334155;cursor:pointer;transition:.15s}
+  .opt:active{transform:scale(.99)}
+  .opt.sel{border-color:var(--brand);background:#eff6ff;color:var(--brand);font-weight:600}
+  .opt.correct{border-color:var(--ok);background:#ecfdf5;color:var(--ok);font-weight:700}
+  .opt.wrong{border-color:var(--bad);background:#fef2f2;color:var(--bad);font-weight:700}
+  .opt .k{display:inline-block;width:20px;color:var(--sub);font-weight:700}
+  .opt.sel .k,.opt.correct .k,.opt.wrong .k{color:inherit}
+  .exp{font-size:12.5px;color:var(--sub);background:#f8fafc;border-radius:10px;padding:8px 10px;margin-top:6px;display:none}
+  .exp.show{display:block}
+  .exp b{color:#334155}
+  /* result */
+  .res{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 18px;margin-top:18px;box-shadow:0 8px 28px rgba(15,23,42,.08)}
+  .score{text-align:center}
+  .score .num{font-size:54px;font-weight:900;line-height:1}
+  .level{display:inline-block;margin-top:8px;padding:5px 16px;border-radius:999px;font-weight:800;font-size:15px;color:#fff}
+  .bar{height:10px;background:#eef2f7;border-radius:999px;margin:16px 0 6px;overflow:hidden}
+  .bar>i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+  .sum{font-size:13.5px;color:var(--sub);text-align:center;margin-top:4px}
+  .weak{margin-top:18px}
+  .weak h3{font-size:14px;margin:0 0 8px}
+  .wrow{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:13px}
+  .wrow .lbl{width:130px;flex:none}
+  .wrow .wb{flex:1;height:8px;background:#eef2f7;border-radius:999px;overflow:hidden}
+  .wrow .wb>i{display:block;height:100%;background:var(--warn)}
+  .wrow .pc{width:48px;text-align:right;color:var(--sub);flex:none}
+  .adv{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 14px;margin-top:16px;font-size:13px;color:#92400e}
+  .adv b{color:#78350f}
+  .hist{margin-top:18px}
+  .hist h3{font-size:14px;margin:0 0 8px}
+  .hrow{display:flex;align-items:center;gap:8px;font-size:12.5px;border-bottom:1px dashed var(--line);padding:8px 2px;color:#334155}
+  .hrow .hn{font-weight:700;width:64px;flex:none}
+  .hrow .hd{width:108px;flex:none;color:var(--sub)}
+  .hrow .hs{font-weight:800;color:var(--brand)}
+  .hrow .ht{font-size:11px;color:var(--sub);flex:none;margin-left:auto}
+  .trend{display:flex;align-items:flex-end;gap:5px;height:60px;margin-top:8px}
+  .trend .tb{flex:1;background:linear-gradient(180deg,var(--brand),var(--brand2));border-radius:5px 5px 0 0;position:relative;min-width:0}
+  .trend .tb span{position:absolute;bottom:-16px;left:0;right:0;text-align:center;font-size:10px;color:var(--sub)}
+  .foot{font-size:11.5px;color:#94a3b8;text-align:center;margin-top:22px;line-height:1.7}
+  .toast{position:fixed;left:50%;top:24px;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;z-index:50}
+  .toast.show{opacity:1}
+  .loading{text-align:center;padding:40px 10px;color:var(--sub);font-size:14px}
+  .hide{display:none}
+  /* modal */
+  .mask{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;padding:18px;z-index:60}
+  .mask.show{display:flex}
+  .modal{background:#fff;border-radius:18px;max-width:560px;width:100%;max-height:82vh;overflow:auto;padding:18px 16px}
+  .modal h2{font-size:16px;margin:0 0 12px;color:#334155}
+  .modal .close{float:right;background:none;border:none;font-size:20px;color:var(--sub);cursor:pointer;margin-top:-6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>七上科学 · 水平诊断测试</h1>
+    <p>依据《七年级上册科学（浙教版）知识梳理》全册，可随机出题 / AI 重新出题，自动判分并记录成绩</p>
+    <div class="meta">
+      <span class="chip">可选单元 / 全学期</span>
+      <span class="chip">本地随机 · AI 出题</span>
+      <span class="chip">自动判分 + 水平等级</span>
+      <span class="chip">记录人 / 时间 / 成绩</span>
+    </div>
+  </header>
+
+  <!-- ============ 开始页 ============ -->
+  <div id="startScreen">
+    <div class="card">
+      <h2>① 基本信息（用于记录成绩）</h2>
+      <div class="row2">
+        <div class="field">
+          <label>姓名 *</label>
+          <input type="text" id="stuName" placeholder="如：小明" maxlength="12">
+        </div>
+        <div class="field">
+          <label>班级（可选）</label>
+          <input type="text" id="stuClass" placeholder="如：七(3)班" maxlength="12">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>② 出题范围</h2>
+      <div class="field">
+        <label>选择单元（点选；或一键选全学期）</label>
+        <div class="units" id="units"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>③ 题目设置</h2>
+      <div class="row2">
+        <div class="field">
+          <label>题目数量</label>
+          <input type="number" id="qCount" value="20" min="5" max="60">
+        </div>
+        <div class="field">
+          <label>出题方式</label>
+          <div class="modes">
+            <div class="mode on" id="mLocal" onclick="setMode('local')">本地随机<small>不耗 API</small></div>
+            <div class="mode" id="mAI" onclick="setMode('ai')">AI 重新出题<small>消耗 API</small></div>
+          </div>
+        </div>
+      </div>
+      <div class="apibox hide" id="aiNote">
+        需要在本机先填 DeepSeek API Key（与「学习小助手」共用，同域名已自动读取）。未填或调用失败时会自动改用本地题库随机出题。
+        <input type="text" id="apiKey" placeholder="sk-...（可选，留空则用已保存的 Key）" style="width:100%">
+      </div>
+      <button class="linkbtn" onclick="openHistory()">📒 查看历史成绩</button>
+    </div>
+
+    <button class="btn" onclick="startTest()">开始测试 ▶</button>
+  </div>
+
+  <!-- ============ 答题页 ============ -->
+  <div id="quizScreen" class="hide">
+    <div class="card" style="padding:12px 14px">
+      <div style="font-size:13px;color:#475569" id="quizInfo"></div>
+    </div>
+    <div id="quiz"></div>
+    <button class="btn" id="submitBtn" onclick="grade()">提交并查看成绩 ▶</button>
+    <button class="btn ghost hide" id="retryBtn" onclick="backHome()">返回首页 / 换范围</button>
+  </div>
+
+  <!-- ============ 结果页 ============ -->
+  <div id="resultScreen" class="hide">
+    <div id="result"></div>
+    <div class="card">
+      <h2>📒 历史成绩</h2>
+      <div id="histList"></div>
+    </div>
+    <button class="btn" id="againBtn" onclick="redoSame()">再用同样范围随机出一套 ▶</button>
+    <button class="btn ghost" onclick="backHome()">返回首页 / 换范围</button>
+  </div>
+
+  <div class="foot">
+    本测试题目依据教材重点词组 / 句型 / 语法点整理或经 AI 生成，仅供家庭自测参考。<br>
+    建议孩子独立作答，再对照解析订正，效果最好。
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 历史弹窗 -->
+<div class="mask" id="histMask">
+  <div class="modal">
+    <button class="close" onclick="closeHistory()">×</button>
+    <h2>📒 历史成绩记录</h2>
+    <div id="histModalList"></div>
+    <div style="margin-top:10px;text-align:right">
+      <button class="linkbtn" onclick="clearHistory()">清空全部记录</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===================== 单元定义 ===================== */
+const UNITS=[
+  {k:'C1',label:'第1章 科学入门',full:'第1章 科学入门'},
+  {k:'C2',label:'第2章 观察生物',full:'第2章 观察生物'},
+  {k:'C3',label:'第3章 地球',full:'第3章 人类的家园——地球'},
+  {k:'C4',label:'第4章 物质',full:'第4章 物质的特性'},
+];
+const UNIT_FULL=new Set(UNITS.map(u=>u.full));
+
+/* ===================== 题库（按单元扩充） ===================== */
+const BANK=[
+{u:'第1章 科学入门',part:'测量',q:'长度的国际基本单位是？',b:'',opts:['米（m）','厘米（cm）','千米（km）','分米（dm）'],a:0},
+{u:'第1章 科学入门',part:'测量',q:'实验室测量液体体积常用的仪器是？',b:'',opts:['量筒','天平','温度计','停表'],a:0},
+{u:'第1章 科学入门',part:'测量',q:'体温计的测量范围一般是？',b:'',opts:['35℃～42℃','0℃～100℃','-20℃～50℃','0℃～42℃'],a:0},
+{u:'第1章 科学入门',part:'测量',q:'质量的国际基本单位是？',b:'',opts:['千克（kg）','克（g）','牛顿（N）','吨（t）'],a:0},
+{u:'第1章 科学入门',part:'测量',q:'用天平测质量时，被测物体应放在天平的？',b:'',opts:['左盘','右盘','两边都可以','托盘外'],a:0,exp:'天平使用“左物右码”。'},
+{u:'第1章 科学入门',part:'探究',q:'科学探究过程通常开始于哪一个环节？',b:'',opts:['提出问题','得出结论','进行实验','查阅资料'],a:0},
+{u:'第1章 科学入门',part:'测量',q:'1 米等于多少厘米？',b:'',opts:['100 厘米','10 厘米','1000 厘米','10000 厘米'],a:0},
+{u:'第1章 科学入门',part:'测量',q:'下列工具中，用于测量时间的是？',b:'',opts:['停表','量筒','刻度尺','温度计'],a:0},
+{u:'第1章 科学入门',part:'探究',q:'下列关于科学观察的做法，错误的是？',b:'',opts:['只用眼睛看，不需要借助任何仪器','用放大镜观察细微之处','用显微镜观察细胞结构','认真记录观察结果'],a:0},
+{u:'第1章 科学入门',part:'测量',q:'下列单位中，属于体积单位的是？',b:'',opts:['升（L）','千克（kg）','米（m）','秒（s）'],a:0},
+{u:'第1章 科学入门',part:'测量',q:'用温度计读数时，视线应当？',b:'',opts:['与液柱上表面相平','与液柱下表面相平','从任意角度读','与玻璃泡相平'],a:0},
+{u:'第1章 科学入门',part:'探究',q:'实验中多次测量取平均值，主要目的是？',b:'',opts:['减小误差','提高速度','避免错误','增加难度'],a:0,exp:'多次测量取平均可减小偶然误差。'},
+{u:'第2章 观察生物',part:'细胞',q:'除病毒外，细胞是生物体（多细胞生物）的？',b:'',opts:['结构和功能的基本单位','最大的结构单位','唯一的组成物质','能量的来源'],a:0},
+{u:'第2章 观察生物',part:'生物特征',q:'下列属于生物基本特征的是？',b:'',opts:['能进行新陈代谢','能发光','能导电','有固定颜色'],a:0,exp:'新陈代谢是生物最基本的特征。'},
+{u:'第2章 观察生物',part:'细胞',q:'植物细胞和动物细胞都具有的结构是？',b:'',opts:['细胞膜、细胞质、细胞核','细胞壁、叶绿体','液泡、细胞壁','叶绿体、液泡'],a:0},
+{u:'第2章 观察生物',part:'实验',q:'用显微镜观察时，若物像在视野左上方，应将装片移向？',b:'',opts:['左上方','右下方','左下方','右上方'],a:0,exp:'显微镜下成倒像，物像在哪就往哪移装片。'},
+{u:'第2章 观察生物',part:'分类',q:'下列属于动物的是？',b:'',opts:['蚯蚓','紫菜','蘑菇','水仙'],a:0,exp:'紫菜是藻类植物，蘑菇是真菌，水仙是植物。'},
+{u:'第2章 观察生物',part:'分类',q:'生物分类等级中，最基本（最小）的分类单位是？',b:'',opts:['种','属','科','界'],a:0},
+{u:'第2章 观察生物',part:'细胞',q:'下列结构中，植物细胞有而动物细胞没有的是？',b:'',opts:['细胞壁','细胞膜','细胞质','细胞核'],a:0},
+{u:'第2章 观察生物',part:'结构层次',q:'人体由微观到宏观的结构层次是？',b:'',opts:['细胞→组织→器官→系统→人体','细胞→器官→组织→系统','组织→细胞→器官','细胞→系统→器官→人体'],a:0},
+{u:'第2章 观察生物',part:'生物特征',q:'下列属于单细胞生物的是？',b:'',opts:['草履虫','蝗虫','青蛙','向日葵'],a:0},
+{u:'第2章 观察生物',part:'细胞',q:'下列关于细胞的说法，正确的是？',b:'',opts:['细胞通过分裂产生新细胞','细胞都不能运动','所有细胞都有叶绿体','细胞比分子还小'],a:0},
+{u:'第2章 观察生物',part:'细胞',q:'绿色植物进行光合作用的场所是？',b:'',opts:['叶绿体','线粒体','细胞核','液泡'],a:0,exp:'光合作用在叶绿体中进行。'},
+{u:'第2章 观察生物',part:'生物特征',q:'下列现象中，说明生物能够繁殖的是？',b:'',opts:['母鸡下蛋','铁钉生锈','机器人工作','水结成冰'],a:0},
+{u:'第3章 人类的家园——地球',part:'地球结构',q:'地球内部从外到内的圈层依次是？',b:'',opts:['地壳、地幔、地核','地核、地幔、地壳','地壳、地核、地幔','地幔、地壳、地核'],a:0},
+{u:'第3章 人类的家园——地球',part:'水体',q:'地球上面积最大的水体是？',b:'',opts:['海洋','湖泊','河流','冰川'],a:0},
+{u:'第3章 人类的家园——地球',part:'地形',q:'下列地形中，主要由流水长期侵蚀作用形成的是？',b:'',opts:['峡谷','平原','高原','盆地'],a:0,exp:'峡谷多因地表流水长期侵蚀切割而成。'},
+{u:'第3章 人类的家园——地球',part:'土壤',q:'土壤主要由下列哪些成分组成？',b:'',opts:['空气、水、腐殖质和矿物质等','只有矿物质','单一的化学元素','只有水分'],a:0},
+{u:'第3章 人类的家园——地球',part:'地球结构',q:'地球的平均半径约为？',b:'',opts:['6371 千米','3400 千米','40000 千米','12742 千米'],a:0,exp:'6371km为平均半径，12742km为直径。'},
+{u:'第3章 人类的家园——地球',part:'岩石',q:'下列岩石中，属于沉积岩的是？',b:'',opts:['砂岩','花岗岩','玄武岩','大理岩'],a:0,exp:'花岗岩、玄武岩属岩浆岩，大理岩属变质岩。'},
+{u:'第3章 人类的家园——地球',part:'土壤',q:'土壤肥力高低的主要标志是？',b:'',opts:['有机质（腐殖质）含量','沙粒含量','石块含量','水分含量'],a:0},
+{u:'第3章 人类的家园——地球',part:'海陆',q:'地球表面的海洋和陆地比例大约是？',b:'',opts:['三分陆地七分海洋','各占一半','七分陆地三分海洋','几乎全是海洋'],a:0},
+{u:'第3章 人类的家园——地球',part:'地壳运动',q:'下列现象中，与板块运动无关的是？',b:'',opts:['昼夜交替','火山喷发','地震','高大山脉的形成'],a:0,exp:'昼夜交替由地球自转产生。'},
+{u:'第3章 人类的家园——地球',part:'地球形状',q:'证明地球是一个球体最直观的证据是？',b:'',opts:['人造地球卫星照片','古代神话传说','人们的臆想','手工绘制的地图'],a:0},
+{u:'第3章 人类的家园——地球',part:'地形',q:'下列地形中，海拔较高且内部地面起伏较小的是？',b:'',opts:['高原','平原','盆地','峡谷'],a:0,exp:'高原海拔高、边缘陡、内部起伏小。'},
+{u:'第3章 人类的家园——地球',part:'土壤',q:'土壤中的小动物（如蚯蚓）对土壤的主要作用是？',b:'',opts:['疏松土壤、增加肥力','吃掉植物根系','破坏土壤结构','与土壤无关'],a:0},
+{u:'第4章 物质的特性',part:'密度',q:'密度是指某种物质单位体积的质量，其大小等于？',b:'',opts:['质量与体积的比值','重量与体积的比','体积与质量的比','质量与面积的比'],a:0,exp:'密度 ρ = m / V。'},
+{u:'第4章 物质的特性',part:'物态',q:'在标准大气压下，纯水的凝固点是？',b:'',opts:['0℃','100℃','-1℃','4℃'],a:0},
+{u:'第4章 物质的特性',part:'物态',q:'在标准大气压下，纯水的沸点是？',b:'',opts:['100℃','0℃','50℃','37℃'],a:0},
+{u:'第4章 物质的特性',part:'物态',q:'下列物态变化中，属于熔化的是？',b:'',opts:['冰变成水','水变成冰','水变成水蒸气','水蒸气变成水'],a:0,exp:'熔化是固态变液态。'},
+{u:'第4章 物质的特性',part:'质量',q:'物体的质量不会随下列哪一项的改变而改变？',b:'',opts:['位置、形状、状态的改变','温度的变化','体积的变化','所处环境'],a:0,exp:'质量是物体本身属性，不随位置、形状、状态等改变。'},
+{u:'第4章 物质的特性',part:'密度',q:'对于同一种物质，密度的大小？',b:'',opts:['是物质的特性，与质量、体积无关','随质量增大而增大','随体积增大而减小','始终为零'],a:0},
+{u:'第4章 物质的特性',part:'密度',q:'下列物质中，密度比水小的是？',b:'',opts:['木块','铁块','石块','铜块'],a:0},
+{u:'第4章 物质的特性',part:'物态',q:'物质由气态直接变成固态的物态变化叫？',b:'',opts:['凝华','升华','凝固','液化'],a:0,exp:'凝华：气→固；升华：固→气。'},
+{u:'第4章 物质的特性',part:'变化',q:'下列变化中，属于化学变化的是？',b:'',opts:['铁钉生锈','水结成冰','玻璃破碎','冰化成水'],a:0,exp:'铁生锈生成新物质，是化学变化。'},
+{u:'第4章 物质的特性',part:'密度',q:'一块铁质量为 79 克、体积为 10 立方厘米，其密度为？',b:'',opts:['7.9 克/立方厘米','0.79 克/立方厘米','79 克/立方厘米','790 克/立方厘米'],a:0,exp:'ρ = 79g / 10cm³ = 7.9 g/cm³。'},
+{u:'第4章 物质的特性',part:'测量',q:'体温计离开人体后仍能显示原读数，是因为它有？',b:'',opts:['一段细弯的缩口结构','很大的刻度','很多水银','很厚的玻璃'],a:0},
+{u:'第4章 物质的特性',part:'物态',q:'下列物质中，属于晶体的是？',b:'',opts:['冰','玻璃','蜡烛','松香'],a:0,exp:'冰有固定熔点，是晶体；其余是非晶体。'},
+];
+
+/* ===================== 状态 ===================== */
+const answers={};
+let Q=[];
+let currentName='', lastCount=20, lastAI=false, lastScopeText='全学期';
+let mode='local';
+const selectedUnits=new Set(UNITS.map(u=>u.full));
+
+/* ===================== 工具 ===================== */
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1500);}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+/* 打乱单题选项，使正确项下标随机分布（题库里 a 多固定为 0，必须重排） */
+function shuffleOptions(q){
+  const idx=[0,1,2,3];
+  for(let i=idx.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
+  return Object.assign({},q,{opts:idx.map(k=>q.opts[k]),a:idx.indexOf(q.a)});
+}
+function $(id){return document.getElementById(id);}
+
+/* ===================== 开始页渲染 ===================== */
+function renderUnits(){
+  const box=$('units');
+  let html='<span class="uchip all on" id="uAll" onclick="toggleAll()">📚 全学期</span>';
+  html+=UNITS.map(u=>`<span class="uchip on" data-k="${u.full}" onclick="toggleUnit('${u.full}')">${u.label}</span>`).join('');
+  box.innerHTML=html;
+}
+function toggleAll(){
+  UNITS.forEach(u=>selectedUnits.add(u.full));
+  document.querySelectorAll('#units .uchip').forEach(c=>c.classList.add('on'));
+}
+function toggleUnit(full){
+  // 点具体单元时，取消“全学期”高亮，转为自选
+  $('uAll').classList.remove('on');
+  if(selectedUnits.has(full)){selectedUnits.delete(full);}
+  else{selectedUnits.add(full);}
+  const chip=document.querySelector(`#units .uchip[data-k="${CSS.escape(full)}"]`);
+  if(chip)chip.classList.toggle('on',selectedUnits.has(full));
+}
+function setMode(m){
+  mode=m;
+  $('mLocal').classList.toggle('on',m==='local');
+  $('mAI').classList.toggle('on',m==='ai');
+  $('aiNote').classList.toggle('hide',m!=='ai');
+}
+renderUnits();
+setMode('local');
+
+/* ===================== 开始测试 ===================== */
+function startTest(){
+  const name=($('stuName').value||'').trim();
+  if(!name){toast('请输入姓名以便记录成绩');$('stuName').focus();return;}
+  if(selectedUnits.size===0){toast('请至少选择一个单元');return;}
+  let count=parseInt($('qCount').value)||20;
+  count=Math.max(5,Math.min(60,count));
+  currentName=name; lastCount=count; lastAI=(mode==='ai');
+  lastScopeText = selectedUnits.size===UNITS.length ? '全学期' : [...selectedUnits].sort().join('、');
+
+  if(mode==='ai'){ generateAI(count); }
+  else { buildLocal(count); }
+}
+
+/* 本地随机抽题（按比例分布到所选单元） */
+function buildLocal(count){
+  const sel=[...selectedUnits];
+  const byUnit={};
+  sel.forEach(u=>byUnit[u]=shuffle(BANK.filter(x=>x.u===u)));
+  let per=Math.max(1,Math.floor(count/sel.length));
+  let picked=[];
+  sel.forEach(u=>{ picked=picked.concat(byUnit[u].slice(0,per)); });
+  // 补足
+  let rest=count-picked.length;
+  if(rest>0){
+    let pool=[];
+    sel.forEach(u=>{ const used=new Set(picked.filter(x=>x.u===u)); byUnit[u].forEach(x=>{if(!used.has(x))pool.push(x);}); });
+    pool=shuffle(pool);
+    picked=picked.concat(pool.slice(0,rest));
+  }
+  picked=shuffle(picked).slice(0,count);
+  beginQuiz(picked,'本地随机');
+}
+
+/* AI 重新出题（消耗 API） */
+async function generateAI(count){
+  const KEY=($('apiKey').value||'').trim() || localStorage.getItem('stest_key') || localStorage.getItem('ds_key') || '';
+  if(KEY) localStorage.setItem('stest_key',KEY);
+  if(!KEY){
+    toast('未设置 API Key，已改用本地题库随机出题');
+    buildLocal(count); return;
+  }
+  showQuizLoading('🤖 AI 正在按所选单元重新出题，请稍候…');
+  const unitsText=[...selectedUnits].sort().join('、');
+  const prompt=`你是一位七年级上册科学（浙教版）出题老师。请根据七年级上册科学范围（科学入门、观察生物、地球、物质的特性），为以下单元出 ${count} 道四选一选择题，用于学生水平诊断。
+要求：
+1. 单元范围（u 只能取以下之一）：${unitsText}
+2. 题型混合：词汇翻译、语法单选、句型转换、完形填空、阅读理解 都可有，难度为七年级上学期。
+3. 每题返回 JSON 对象，字段严格为：
+   - u：单元名（必须是上面给定的单元之一）
+   - q：题干（可含换行，用 \\n 表示）
+   - b：题干前置背景/短文，没有则空字符串 ""
+   - opts：长度为 4 的字符串数组（选项）
+   - a：正确答案下标（0-3 的整数）
+   - exp：中文解析（一句话说明考点）
+4. 只输出一个 JSON 数组，不要任何解释文字，不要使用 markdown 代码块标记。
+5. 共 ${count} 题，务必凑足数量。`;
+  try{
+    const resp=await fetch('https://api.deepseek.com/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY},
+      body:JSON.stringify({model:'deepseek-chat',messages:[{role:'system',content:'你是严谨的七年级科学老师，只输出符合要求的 JSON。'},{role:'user',content:prompt}],temperature:0.9,max_tokens:3500})
+    });
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const d=await resp.json();
+    const content=d.choices?.[0]?.message?.content||'';
+    const qs=parseAI(content);
+    if(qs.length<3) throw new Error('生成题目过少');
+    beginQuiz(qs,'AI 出题');
+  }catch(e){
+    console.error(e);
+    toast('AI 出题失败（'+e.message+'），已改用本地题库随机出题');
+    buildLocal(count);
+  }
+}
+function parseAI(text){
+  let t=(text||'').trim().replace(/```json/gi,'').replace(/```/g,'').trim();
+  // 截取第一个 [ 到最后一个 ]
+  const s=t.indexOf('['), e=t.lastIndexOf(']');
+  if(s>=0&&e>t) t=t.slice(s,e+1);
+  let arr;
+  try{ arr=JSON.parse(t); }catch(_){ return []; }
+  if(!Array.isArray(arr)) return [];
+  return arr.filter(x=>{
+    if(!x||!Array.isArray(x.opts)||x.opts.length!==4||!x.q) return false;
+    const ai=Number(x.a);
+    return Number.isInteger(ai)&&ai>=0&&ai<4;
+  }).map(x=>({u:(UNIT_FULL.has(x.u)?x.u:'Unit 1'),q:String(x.q),b:String(x.b||''),opts:x.opts.map(String),a:Number(x.a),exp:String(x.exp||''),part:''}));
+}
+
+/* ===================== 渲染答题 ===================== */
+function showQuizLoading(msg){
+  $('startScreen').classList.add('hide');
+  $('resultScreen').classList.add('hide');
+  $('quizScreen').classList.remove('hide');
+  $('submitBtn').classList.add('hide');
+  $('retryBtn').classList.add('hide');
+  $('quiz').innerHTML='<div class="loading">'+msg+'</div>';
+  window.scrollTo(0,0);
+}
+function beginQuiz(questions,srcLabel){
+  Q=questions.map(shuffleOptions);
+  for(const k in answers) delete answers[k];
+  const quizEl=$('quiz');
+  quizEl.innerHTML='';
+  Q.forEach((it,i)=>{
+    const qid='q'+i;
+    const optsHtml=it.opts.map((o,ki)=>
+      `<button class="opt" id="o-${qid}-${ki}" onclick="pick('${qid}',${ki})"><span class="k">${String.fromCharCode(65+ki)}.</span>${esc(o)}</button>`
+    ).join('');
+    const div=document.createElement('div');
+    div.className='q';
+    div.innerHTML=`<div class="q-h">第 ${i+1} 题<span class="tag">${esc(it.u)}</span></div>`+
+      (it.b?`<div class="q-b">${esc(it.b)}</div>`:'')+
+      `<div class="q-b">${esc(it.q)}</div>`+
+      optsHtml+
+      `<div class="exp" id="exp-${qid}">${it.exp?('💡 '+esc(it.exp)):''}</div>`;
+    quizEl.appendChild(div);
+  });
+  $('quizInfo').textContent=`考生：${currentName}（${($('stuClass').value||'').trim()||'—'}） ｜ 范围：${lastScopeText} ｜ 共 ${questions.length} 题 ｜ 来源：${srcLabel}`;
+  $('startScreen').classList.add('hide');
+  $('resultScreen').classList.add('hide');
+  $('quizScreen').classList.remove('hide');
+  $('submitBtn').classList.remove('hide');
+  $('retryBtn').classList.add('hide');
+  window.scrollTo(0,0);
+}
+function pick(qid,ki){
+  answers[qid]=ki;
+  for(let k=0;k<10;k++){
+    const el=document.getElementById('o-'+qid+'-'+k);
+    if(el) el.classList.toggle('sel',k===ki);
+  }
+}
+
+/* ===================== 判分 ===================== */
+function grade(){
+  if(Q.length===0) return;
+  let unanswered=0,first=null;
+  for(let i=0;i<Q.length;i++){const qid='q'+i;if(answers[qid]===undefined){unanswered++;if(!first)first=qid;}}
+  if(unanswered>0){
+    toast('还有 '+unanswered+' 题没答，请完成全部 '+Q.length+' 题');
+    if(first){const el=document.getElementById('o-'+first+'-0');if(el)el.closest('.q').scrollIntoView({behavior:'smooth',block:'center'});}
+    return;
+  }
+  let correct=0;const wrongUnits={},unitTotal={};
+  for(let i=0;i<Q.length;i++){
+    const qid='q'+i;const it=Q[i];
+    unitTotal[it.u]=(unitTotal[it.u]||0)+1;
+    const chosen=answers[qid];
+    const opts=it.opts.map((o,k)=>document.getElementById('o-'+qid+'-'+k));
+    const expEl=document.getElementById('exp-'+qid);
+    opts[it.a].classList.add('correct');
+    if(chosen===it.a){correct++;}
+    else{opts[chosen].classList.add('wrong');wrongUnits[it.u]=(wrongUnits[it.u]||0)+1;}
+    if(it.exp)expEl.classList.add('show');
+    opts.forEach(o=>o.onclick=null);
+  }
+  showResult(correct,Q.length,wrongUnits,unitTotal);
+}
+
+function showResult(correct,total,wrongUnits,unitTotal){
+  const score=Math.round(correct/total*100);
+  let level,lvlColor,comment;
+  if(score>=90){level='优秀 A';lvlColor='var(--ok)';comment='七上科学掌握扎实，各章核心概念与实验探究都过关，可挑战综合应用题。';}
+  else if(score>=75){level='良好 B';lvlColor='var(--brand)';comment='基本达标，个别语法点需巩固。对照解析把错题库再刷一遍即可稳住。';}
+  else if(score>=60){level='合格 C';lvlColor='var(--warn)';comment='有薄弱单元，建议按下方“薄弱项”优先复习对应单元的重点词组与语法。';}
+  else {level='待提升 D';lvlColor='var(--bad)';comment='建议从 Starter Unit 与 be 动词、三单、there be 等基础语法重新抓起，先背熟词组再练题。';}
+
+  const rows=Object.keys(unitTotal).map(u=>({
+    u,total:unitTotal[u],wrong:wrongUnits[u]||0,
+    pc:unitTotal[u]?Math.round((wrongUnits[u]||0)/unitTotal[u]*100):0
+  })).sort((a,b)=>b.pc-a.pc);
+  const weakRows=rows.map(r=>
+    `<div class="wrow"><div class="lbl">${r.u}</div><div class="wb"><i style="width:${r.pc}%"></i></div><div class="pc">${r.wrong}/${r.total}</div></div>`
+  ).join('')||'<div class="sum">🎉 全单元零失误，非常棒！</div>';
+
+  let advice='';
+  const top=rows.find(r=>r.wrong>0);
+  if(top){
+    const map={
+      'Starter Unit 1':'复习字母表、问候语（Good morning/afternoon/evening）与 be 动词 am/is/are。',
+      'Starter Unit 2':'复习颜色词与介词 in/on/under，以及 What color/What’s this 问句。',
+      'Starter Unit 3':'复习指示代词 this/that/these/those 与基数词 0-15。',
+      'Unit 1':'复习 be 动词（am/is/are）与形容词性物主代词。',
+      'Unit 2':'复习实义动词一般现在时、三单变化规则与名词所有格。',
+      'Unit 3':'复习 there be 句型（就近原则）与方位介词。',
+      'Unit 4':'复习 boring/bored、be good at/with/for、and/but/because 连词。',
+      'Unit 5':'复习情态动词 can、play 用法（球类/乐器）、speak/say/talk/tell。',
+      'Unit 6':'复习日常作息词汇、what time/when、时间表达法与频度副词。',
+      'Unit 7':'复习序数词、日期介词 on、How much 问价格与生日话题表达。'
+    };
+    advice=`<div class="adv"><b>📌 复习建议：</b>最薄弱的是 <b>${top.u}</b>（错 ${top.wrong}/${top.total}）。${map[top.u]||''}</div>`;
+  }
+
+  const res=$('result');
+  res.innerHTML=`
+    <div class="res">
+      <div style="font-size:13px;color:#475569;text-align:center">考生：${esc(currentName)}（${esc(($('stuClass').value||'').trim()||'—')}）｜ 范围：${esc(lastScopeText)}｜ ${new Date().toLocaleString('zh-CN')}</div>
+      <div class="score" style="margin-top:10px">
+        <div class="num" style="color:${lvlColor}">${score}</div>
+        <div class="level" style="background:${lvlColor}">${level}</div>
+        <div class="sum">答对 ${correct} / ${total} 题 · 满分 100</div>
+      </div>
+      <div class="bar"><i style="width:${score}%"></i></div>
+      <div class="sum">${comment}</div>
+      <div class="weak">
+        <h3>📊 各单元正确率（薄弱项排序）</h3>
+        ${weakRows}
+      </div>
+      ${advice}
+      <div class="adv" style="background:#eff6ff;border-color:#bfdbfe;color:#1e40af;margin-top:14px">✅ 本次成绩已自动记录到本机（含姓名、时间、范围、分数与各单元正确率）。可在下方或“查看历史成绩”回看。</div>
+    </div>`;
+
+  // 记录
+  saveRecord({name:currentName,cls:($('stuClass').value||'').trim(),scope:lastScopeText,score,total,correct,
+    dt:new Date().toISOString(),dtDisplay:new Date().toLocaleString('zh-CN'),
+    breakdown:rows.map(r=>({u:r.u,total:r.total,wrong:r.wrong}))});
+
+  $('quizScreen').classList.add('hide');
+  $('resultScreen').classList.remove('hide');
+  renderHistory($('histList'));
+  $('resultScreen').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ===================== 成绩记录 ===================== */
+function saveRecord(rec){
+  let h=[];
+  try{h=JSON.parse(localStorage.getItem('stest_history')||'[]');}catch(_){}
+  h.unshift(rec);
+  if(h.length>50)h=h.slice(0,50);
+  localStorage.setItem('stest_history',JSON.stringify(h));
+}
+function renderHistory(container){
+  let h=[];
+  try{h=JSON.parse(localStorage.getItem('stest_history')||'[]');}catch(_){}
+  if(!h.length){container.innerHTML='<div class="sum">暂无记录，做完一套测试就会显示在这里。</div>';return;}
+  const rows=h.map(r=>`<div class="hrow"><span class="hn">${esc(r.name)}</span><span class="hd">${esc(r.scope)}</span><span class="hs">${r.score}分</span><span class="ht">${esc(r.dtDisplay)}</span></div>`).join('');
+  // 走势（最近 8 次）
+  const recent=h.slice(0,8).reverse();
+  const trend=recent.map(r=>`<div class="tb" style="height:${Math.max(6,r.score*0.55)}px" title="${r.score}"><span>${r.score}</span></div>`).join('');
+  container.innerHTML=`<div class="trend">${trend}</div><div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:8px">最近 ${recent.length} 次得分走势</div>`+rows;
+}
+function openHistory(){
+  renderHistory($('histModalList'));
+  $('histMask').classList.add('show');
+}
+function closeHistory(){$('histMask').classList.remove('show');}
+function clearHistory(){
+  if(confirm('确定清空全部历史成绩记录？此操作不可恢复。')){
+    localStorage.removeItem('stest_history');
+    renderHistory($('histModalList'));renderHistory($('histList'));
+    toast('已清空历史记录');
+  }
+}
+$('histMask').addEventListener('click',e=>{if(e.target.id==='histMask')closeHistory();});
+
+/* ===================== 导航 ===================== */
+function backHome(){
+  $('quizScreen').classList.add('hide');
+  $('resultScreen').classList.add('hide');
+  $('startScreen').classList.remove('hide');
+  window.scrollTo(0,0);
+}
+function redoSame(){
+  if(lastAI){ generateAI(lastCount); }
+  else { buildLocal(lastCount); }
+}
+</script>
+</body>
+</html>
