@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>七上历史·水平诊断测试</title>
+<style>
+  :root{
+    --brand:#b45309; --brand2:#d97706; --bg:#f5f7fb; --card:#fff;
+    --line:#e5e9f2; --sub:#64748b; --ok:#16a34a; --bad:#dc2626; --warn:#d97706;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:#1e293b;line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:720px;margin:0 auto;padding:16px 14px 60px}
+  header{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;border-radius:18px;padding:20px 18px;box-shadow:0 8px 24px rgba(37,99,235,.25)}
+  header h1{margin:0 0 4px;font-size:21px}
+  header p{margin:0;font-size:13px;opacity:.92}
+  .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .chip{background:rgba(255,255,255,.18);padding:4px 10px;border-radius:999px;font-size:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 14px;margin:14px 0;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+  .card h2{font-size:15px;margin:0 0 12px;color:#334155}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;font-weight:700;color:#475569;margin-bottom:6px}
+  .field input[type=text],.field input[type=number]{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:11px;font-size:15px;color:#334155;background:#f8fafc}
+  .field input:focus{outline:none;border-color:var(--brand);background:#fff}
+  .units{display:flex;flex-wrap:wrap;gap:8px}
+  .uchip{padding:8px 12px;border:1.5px solid var(--line);border-radius:11px;font-size:13px;color:#475569;background:#f8fafc;cursor:pointer;user-select:none}
+  .uchip.on{background:#eff6ff;border-color:var(--brand);color:var(--brand);font-weight:700}
+  .uchip.all{background:#eef2ff}
+  .row2{display:flex;gap:10px}
+  .row2 .field{flex:1}
+  .modes{display:flex;gap:8px}
+  .mode{flex:1;text-align:center;padding:12px 8px;border:1.5px solid var(--line);border-radius:12px;font-size:13px;cursor:pointer;background:#f8fafc;color:#475569}
+  .mode.on{background:#eff6ff;border-color:var(--brand);color:var(--brand);font-weight:700}
+  .mode small{display:block;font-size:11px;opacity:.8;margin-top:3px;font-weight:400}
+  .apibox{margin-top:6px;font-size:12px;color:var(--sub);background:#f8fafc;border-radius:10px;padding:10px 12px}
+  .apibox input{margin-top:6px}
+  .btn{display:block;width:100%;border:none;border-radius:14px;padding:15px;font-size:16px;font-weight:800;color:#fff;
+    background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 18px rgba(37,99,235,.3);cursor:pointer;margin-top:6px}
+  .btn:active{transform:scale(.99)}
+  .btn.ghost{background:#eef2ff;color:var(--brand);box-shadow:none}
+  .btn.sm{display:inline-block;width:auto;padding:9px 16px;font-size:13px;margin:0}
+  .linkbtn{background:none;border:none;color:var(--brand);font-size:13px;cursor:pointer;padding:6px 0;text-decoration:underline}
+  /* quiz */
+  .sec-t{font-size:15px;font-weight:800;margin:20px 4px 10px;color:#334155}
+  .q{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 14px 10px;margin-bottom:12px;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+  .q-h{font-size:14px;font-weight:700;margin-bottom:4px}
+  .q-h .tag{font-size:11px;font-weight:600;color:var(--brand);background:#eef2ff;padding:1px 8px;border-radius:999px;margin-left:6px}
+  .q-b{font-size:14px;margin:6px 0 10px;color:#334155}
+  .opt{display:block;width:100%;text-align:left;background:#f8fafc;border:1.5px solid var(--line);border-radius:11px;
+    padding:10px 12px;margin:7px 0;font-size:14px;color:#334155;cursor:pointer;transition:.15s}
+  .opt:active{transform:scale(.99)}
+  .opt.sel{border-color:var(--brand);background:#eff6ff;color:var(--brand);font-weight:600}
+  .opt.correct{border-color:var(--ok);background:#ecfdf5;color:var(--ok);font-weight:700}
+  .opt.wrong{border-color:var(--bad);background:#fef2f2;color:var(--bad);font-weight:700}
+  .opt .k{display:inline-block;width:20px;color:var(--sub);font-weight:700}
+  .opt.sel .k,.opt.correct .k,.opt.wrong .k{color:inherit}
+  .exp{font-size:12.5px;color:var(--sub);background:#f8fafc;border-radius:10px;padding:8px 10px;margin-top:6px;display:none}
+  .exp.show{display:block}
+  .exp b{color:#334155}
+  /* result */
+  .res{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 18px;margin-top:18px;box-shadow:0 8px 28px rgba(15,23,42,.08)}
+  .score{text-align:center}
+  .score .num{font-size:54px;font-weight:900;line-height:1}
+  .level{display:inline-block;margin-top:8px;padding:5px 16px;border-radius:999px;font-weight:800;font-size:15px;color:#fff}
+  .bar{height:10px;background:#eef2f7;border-radius:999px;margin:16px 0 6px;overflow:hidden}
+  .bar>i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+  .sum{font-size:13.5px;color:var(--sub);text-align:center;margin-top:4px}
+  .weak{margin-top:18px}
+  .weak h3{font-size:14px;margin:0 0 8px}
+  .wrow{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:13px}
+  .wrow .lbl{width:130px;flex:none}
+  .wrow .wb{flex:1;height:8px;background:#eef2f7;border-radius:999px;overflow:hidden}
+  .wrow .wb>i{display:block;height:100%;background:var(--warn)}
+  .wrow .pc{width:48px;text-align:right;color:var(--sub);flex:none}
+  .adv{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 14px;margin-top:16px;font-size:13px;color:#92400e}
+  .adv b{color:#78350f}
+  .hist{margin-top:18px}
+  .hist h3{font-size:14px;margin:0 0 8px}
+  .hrow{display:flex;align-items:center;gap:8px;font-size:12.5px;border-bottom:1px dashed var(--line);padding:8px 2px;color:#334155}
+  .hrow .hn{font-weight:700;width:64px;flex:none}
+  .hrow .hd{width:108px;flex:none;color:var(--sub)}
+  .hrow .hs{font-weight:800;color:var(--brand)}
+  .hrow .ht{font-size:11px;color:var(--sub);flex:none;margin-left:auto}
+  .trend{display:flex;align-items:flex-end;gap:5px;height:60px;margin-top:8px}
+  .trend .tb{flex:1;background:linear-gradient(180deg,var(--brand),var(--brand2));border-radius:5px 5px 0 0;position:relative;min-width:0}
+  .trend .tb span{position:absolute;bottom:-16px;left:0;right:0;text-align:center;font-size:10px;color:var(--sub)}
+  .foot{font-size:11.5px;color:#94a3b8;text-align:center;margin-top:22px;line-height:1.7}
+  .toast{position:fixed;left:50%;top:24px;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;z-index:50}
+  .toast.show{opacity:1}
+  .loading{text-align:center;padding:40px 10px;color:var(--sub);font-size:14px}
+  .hide{display:none}
+  /* modal */
+  .mask{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;padding:18px;z-index:60}
+  .mask.show{display:flex}
+  .modal{background:#fff;border-radius:18px;max-width:560px;width:100%;max-height:82vh;overflow:auto;padding:18px 16px}
+  .modal h2{font-size:16px;margin:0 0 12px;color:#334155}
+  .modal .close{float:right;background:none;border:none;font-size:20px;color:var(--sub);cursor:pointer;margin-top:-6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>七上历史 · 水平诊断测试</h1>
+    <p>依据《七年级上册历史（部编版）》全册，可随机出题 / AI 重新出题，自动判分并记录成绩</p>
+    <div class="meta">
+      <span class="chip">可选单元 / 全学期</span>
+      <span class="chip">本地随机 · AI 出题</span>
+      <span class="chip">自动判分 + 水平等级</span>
+      <span class="chip">记录人 / 时间 / 成绩</span>
+    </div>
+  </header>
+
+  <!-- ============ 开始页 ============ -->
+  <div id="startScreen">
+    <div class="card">
+      <h2>① 基本信息（用于记录成绩）</h2>
+      <div class="row2">
+        <div class="field">
+          <label>姓名 *</label>
+          <input type="text" id="stuName" placeholder="如：小明" maxlength="12">
+        </div>
+        <div class="field">
+          <label>班级（可选）</label>
+          <input type="text" id="stuClass" placeholder="如：七(3)班" maxlength="12">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>② 出题范围</h2>
+      <div class="field">
+        <label>选择单元（点选；或一键选全学期）</label>
+        <div class="units" id="units"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>③ 题目设置</h2>
+      <div class="row2">
+        <div class="field">
+          <label>题目数量</label>
+          <input type="number" id="qCount" value="20" min="5" max="60">
+        </div>
+        <div class="field">
+          <label>出题方式</label>
+          <div class="modes">
+            <div class="mode on" id="mLocal" onclick="setMode('local')">本地随机<small>不耗 API</small></div>
+            <div class="mode" id="mAI" onclick="setMode('ai')">AI 重新出题<small>消耗 API</small></div>
+          </div>
+        </div>
+      </div>
+      <div class="apibox hide" id="aiNote">
+        需要在本机先填 DeepSeek API Key（与「学习小助手」共用，同域名已自动读取）。未填或调用失败时会自动改用本地题库随机出题。
+        <input type="text" id="apiKey" placeholder="sk-...（可选，留空则用已保存的 Key）" style="width:100%">
+      </div>
+      <button class="linkbtn" onclick="openHistory()">📒 查看历史成绩</button>
+    </div>
+
+    <button class="btn" onclick="startTest()">开始测试 ▶</button>
+  </div>
+
+  <!-- ============ 答题页 ============ -->
+  <div id="quizScreen" class="hide">
+    <div class="card" style="padding:12px 14px">
+      <div style="font-size:13px;color:#475569" id="quizInfo"></div>
+    </div>
+    <div id="quiz"></div>
+    <button class="btn" id="submitBtn" onclick="grade()">提交并查看成绩 ▶</button>
+    <button class="btn ghost hide" id="retryBtn" onclick="backHome()">返回首页 / 换范围</button>
+  </div>
+
+  <!-- ============ 结果页 ============ -->
+  <div id="resultScreen" class="hide">
+    <div id="result"></div>
+    <div class="card">
+      <h2>📒 历史成绩</h2>
+      <div id="histList"></div>
+    </div>
+    <button class="btn" id="againBtn" onclick="redoSame()">再用同样范围随机出一套 ▶</button>
+    <button class="btn ghost" onclick="backHome()">返回首页 / 换范围</button>
+  </div>
+
+  <div class="foot">
+    本测试题目依据教材重点词组 / 句型 / 语法点整理或经 AI 生成，仅供家庭自测参考。<br>
+    建议孩子独立作答，再对照解析订正，效果最好。
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 历史弹窗 -->
+<div class="mask" id="histMask">
+  <div class="modal">
+    <button class="close" onclick="closeHistory()">×</button>
+    <h2>📒 历史成绩记录</h2>
+    <div id="histModalList"></div>
+    <div style="margin-top:10px;text-align:right">
+      <button class="linkbtn" onclick="clearHistory()">清空全部记录</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===================== 单元定义 ===================== */
+const UNITS=[
+  {k:'H1',label:'第一单元 史前时期',full:'第一单元 史前时期'},
+  {k:'H2',label:'第二单元 夏商周',full:'第二单元 夏商周'},
+  {k:'H3',label:'第三单元 秦汉',full:'第三单元 秦汉'},
+  {k:'H4',label:'第四单元 三国两晋南北朝',full:'第四单元 三国两晋南北朝'},
+];
+const UNIT_FULL=new Set(UNITS.map(u=>u.full));
+
+/* ===================== 题库（按单元扩充） ===================== */
+const BANK=[
+  {u:'第一单元 史前时期',part:'',q:'我国境内目前已确认的最早古人类是？',b:'',opts:['元谋人','北京人','山顶洞人','半坡人'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'元谋人距今约多少年？',b:'',opts:['170万年','70万年','3万年','6000年'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'北京人距今约多少年？',b:'',opts:['70万—20万年','170万年','3万年','6000年'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'北京人制作和使用的工具主要是？',b:'',opts:['打制石器','磨制石器','青铜工具','铁制农具'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'北京人已经会使用什么来改善生存条件？',b:'',opts:['天然火','人工取火','电力','煤炭'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'下列古人类中已懂得人工取火的是？',b:'',opts:['山顶洞人','北京人','元谋人','河姆渡人'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'河姆渡原始居民主要种植的粮食作物是？',b:'',opts:['水稻','粟','小麦','玉米'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'河姆渡居民的房屋样式主要是？',b:'',opts:['干栏式建筑','半地穴式','砖木楼房','窑洞'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'半坡原始居民主要种植的作物是？',b:'',opts:['粟','水稻','小麦','甘蔗'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'半坡居民的房屋样式主要是？',b:'',opts:['半地穴式圆形房屋','干栏式','高楼大厦','帐篷'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'被尊奉为中华民族“人文初祖”的是？',b:'',opts:['黄帝和炎帝','尧和舜','禹','秦始皇'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'传说中尧舜禹时期民主推举部落联盟首领的制度叫？',b:'',opts:['禅让制','世袭制','分封制','科举制'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'大禹治水采用的方法是？',b:'',opts:['疏导','堵塞','火烧','填埋'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'半坡原始居民会制造色彩鲜丽的？',b:'',opts:['彩陶','青铜鼎','瓷器','漆器'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'河姆渡遗址位于哪一大河流域？',b:'',opts:['长江流域','黄河流域','珠江流域','黑龙江流域'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'北京人遗址发现于今天的哪一地点？',b:'',opts:['北京周口店','陕西半坡','浙江河姆渡','云南元谋'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'下列古人类遗址中，能够直立行走并使用天然火的是？',b:'',opts:['北京人','元谋人','山顶洞人','半坡人'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'以使用打制石器为特征的时期被称为？',b:'',opts:['旧石器时代','新石器时代','青铜时代','铁器时代'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'下列遗址中，典型反映长江流域原始稻作农业的是？',b:'',opts:['河姆渡遗址','半坡遗址','北京人遗址','元谋人遗址'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'半坡居民居住在半地穴式圆形房屋，主要为了适应当地？',b:'',opts:['干燥寒冷的气候','潮湿多雨','炎热','多风沙'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'河姆渡居民的干栏式建筑，主要适应当地怎样的环境？',b:'',opts:['潮湿多雨、地势低洼','干旱少雨','寒冷','风沙大'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'传说中建造宫室、制作衣裳、挖掘水井的部落首领是？',b:'',opts:['黄帝','炎帝','尧','禹'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'传说中教民开垦耕种、种植五谷和蔬菜的是？',b:'',opts:['炎帝','黄帝','舜','禹'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'炎黄部落打败蚩尤部落的战役发生在？',b:'',opts:['涿鹿','牧野','巨鹿','官渡'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'山顶洞人距今约多少年？',b:'',opts:['3万年','70万—20万年','170万年','6000年'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'北京人过着怎样的生活？',b:'',opts:['群居生活','独居生活','定居村落','城邦生活'],a:0},
+  {u:'第一单元 史前时期',part:'',q:'下列属于了解史前社会最可靠的实物史料的是？',b:'',opts:['古人类化石与遗址','神话传说','文字记载','民间故事'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'我国历史上第一个王朝是？',b:'',opts:['夏朝','商朝','西周','秦朝'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'夏朝建立于约公元前多少年？',b:'',opts:['2070年','1600年','1046年','221年'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'“家天下”取代“公天下”，世袭制开始于谁的继承？',b:'',opts:['启','禹','尧','舜'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'商朝多次迁都，直到谁迁到殷才稳定下来？',b:'',opts:['盘庚','商汤','武丁','纣王'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'迄今世界上出土的最重青铜器是？',b:'',opts:['司母戊鼎','四羊方尊','编钟','利簋'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'我国有文字可考的历史从哪个朝代开始？',b:'',opts:['商朝','夏朝','西周','秦朝'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'商周时期刻写在龟甲和兽骨上的文字被称为？',b:'',opts:['甲骨文','金文','小篆','隶书'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'西周为巩固统治、加强对地方控制实行？',b:'',opts:['分封制','世袭制','郡县制','行省制'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'通过牧野之战灭亡商朝、建立西周的是？',b:'',opts:['周武王','周文王','周平王','周幽王'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'春秋时期农业生产力提高的重要标志是？',b:'',opts:['铁制农具和牛耕出现','青铜工具普及','曲辕犁发明','占城稻引入'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'春秋时期首先称霸的诸侯是？',b:'',opts:['齐桓公','晋文公','楚庄王','秦穆公'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'战国七雄中位于最东边的是？',b:'',opts:['齐','楚','秦','燕'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'商鞅变法发生在下列哪一诸侯国？',b:'',opts:['秦国','齐国','楚国','赵国'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'商鞅变法中确立县制，其主要作用是？',b:'',opts:['加强中央集权','奖励军功','废除井田','奖励耕织'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'春秋末期创办私学、主张“仁”与“礼”的思想家是？',b:'',opts:['孔子','老子','韩非','墨子'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'战国时期主张“兼爱”“非攻”的是哪一学派？',b:'',opts:['墨家','儒家','道家','法家'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'西周分封制下，诸侯对周天子应履行的义务是？',b:'',opts:['镇守疆土、交纳贡赋、朝觐述职','独立称帝','废除周礼','不纳贡赋'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'商朝灭亡的直接原因是？',b:'',opts:['纣王暴政、周武王伐纣','犬戎攻破镐京','国人暴动','平王东迁'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'下列青铜器中，造型奇特、是商代青铜器代表作之一的是？',b:'',opts:['四羊方尊','司母戊鼎','编钟','毛公鼎'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'春秋时期，随着周王室衰微出现了怎样的局面？',b:'',opts:['诸侯争霸','全国统一','中央集权','推行郡县'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'战国时期各国变法中，成效最显著、为秦统一奠基的是？',b:'',opts:['商鞅变法','李悝变法','吴起变法','管仲改革'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'商鞅变法中，奖励军功的主要作用是？',b:'',opts:['提高军队战斗力、打破贵族世袭','削弱军队','重文轻武','废除军队'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'商鞅变法中，奖励耕织的主要作用是？',b:'',opts:['促进农业生产发展','抑制农业','废除土地私有','鼓励游手好闲'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'主张“无为而治”、创立道家学派的是？',b:'',opts:['老子','孔子','韩非','墨子'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'主张建立君主专制中央集权、属于法家代表的是？',b:'',opts:['韩非','孟子','庄子','墨子'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'孟子继承孔子“仁”的思想，主张实行？',b:'',opts:['仁政','法治','无为而治','兼爱非攻'],a:0},
+  {u:'第二单元 夏商周',part:'',q:'奠定我国古代军事理论基础、相传为孙武所著的兵书是？',b:'',opts:['《孙子兵法》','《孙膑兵法》','《六韬》','《三十六计》'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'秦灭六国、建立秦朝是在公元前哪一年？',b:'',opts:['221年','230年','209年','202年'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'秦朝最高统治者自称？',b:'',opts:['皇帝','国王','天子','大汗'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'秦朝在地方上废除分封，实行？',b:'',opts:['郡县制','分封制','行省制','禅让制'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'秦始皇统一文字，把哪种文字作为通用文字颁行全国？',b:'',opts:['小篆','隶书','楷书','行书'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'秦始皇统一货币，以什么作为标准货币？',b:'',opts:['圆形方孔半两钱','刀币','蚁鼻钱','纸币'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'中国历史上第一次大规模的农民起义是？',b:'',opts:['陈胜吴广起义','黄巾起义','黄巢起义','方腊起义'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'陈胜、吴广起义爆发于何地？',b:'',opts:['大泽乡','陈县','巨鹿','咸阳'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'西汉的建立者是？',b:'',opts:['刘邦','项羽','刘秀','刘彻'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'西汉初期出现的安定繁荣局面史称？',b:'',opts:['文景之治','光武中兴','贞观之治','开元盛世'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'汉武帝为削弱诸侯王势力，采纳主父偃建议实行？',b:'',opts:['推恩令','分封制','郡县制','行省制'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'汉武帝接受董仲舒建议，在思想上实行？',b:'',opts:['罢黜百家，独尊儒术','焚书坑儒','无为而治','政教合一'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'汉武帝时期大举反击匈奴，统兵出征的名将是？',b:'',opts:['卫青、霍去病','廉颇、李牧','白起、王翦','韩信、彭越'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'张骞第一次出使西域的主要目的是？',b:'',opts:['联络大月氏夹击匈奴','开通商路','求取佛经','册封诸王'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'丝绸之路的起点是？',b:'',opts:['长安','洛阳','敦煌','楼兰'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'东汉时改进造纸术、用树皮麻头造纸的是？',b:'',opts:['蔡伦','张衡','华佗','张仲景'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'西汉设置西域都护，标志着下列哪一地区正式归属中央政权？',b:'',opts:['西域','蒙古','西藏','台湾'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'秦始皇为加强对思想的控制，采取的措施是？',b:'',opts:['焚书坑儒','罢黜百家，独尊儒术','八股取士','大兴文字狱'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'秦末项羽以少胜多、将秦军主力歼灭的战役是？',b:'',opts:['巨鹿之战','垓下之战','长平之战','城濮之战'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'楚汉之争中最终取胜并建立汉朝的是？',b:'',opts:['刘邦','项羽','韩信','彭越'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'汉武帝将铸币权和盐铁经营权收归中央，主要目的是？',b:'',opts:['加强朝廷对社会经济的控制','削弱皇权','鼓励商业','放任地方割据'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'汉武帝时期，大举出击匈奴并收复河套与河西走廊的将领是？',b:'',opts:['卫青、霍去病','李广利','周亚夫','窦婴'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'丝绸之路开通后，下列通过它传入中原的物品是？',b:'',opts:['葡萄、核桃、苜蓿','玉米','马铃薯','番茄'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'东汉光武帝刘秀统治时期出现的治世是？',b:'',opts:['光武中兴','文景之治','贞观之治','开元盛世'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'东汉名医华佗发明的全身麻醉药剂是？',b:'',opts:['麻沸散','青蒿素','五禽戏','《伤寒杂病论》'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'东汉科学家张衡发明的、可测定地震方向的仪器是？',b:'',opts:['地动仪','浑天仪','司南','指南车'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'司马迁编写的我国古代第一部纪传体通史是？',b:'',opts:['《史记》','《汉书》','《资治通鉴》','《春秋》'],a:0},
+  {u:'第三单元 秦汉',part:'',q:'丝绸之路从长安出发，经西域向西最远到达？',b:'',opts:['欧洲（大秦）','日本','朝鲜','东南亚'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'为曹操统一北方奠定基础的战役是？',b:'',opts:['官渡之战','赤壁之战','淝水之战','巨鹿之战'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'为三国鼎立局面形成奠定基础的战役是？',b:'',opts:['赤壁之战','官渡之战','淝水之战','长平之战'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'220年取代东汉、建立魏国的是？',b:'',opts:['曹丕','刘备','孙权','曹操'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'221年建立蜀汉（蜀国）的是？',b:'',opts:['刘备','曹操','孙权','袁绍'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'吴国建立者孙权曾派船队到达夷洲，即今天的？',b:'',opts:['台湾','海南','辽东','朝鲜'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'结束三国分裂、短暂统一全国的是？',b:'',opts:['西晋','东晋','北魏','前秦'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'西晋初年分封诸王，引发的内乱史称？',b:'',opts:['八王之乱','七国之乱','安史之乱','靖难之役'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'东晋与前秦之间以少胜多的著名战役是？',b:'',opts:['淝水之战','赤壁之战','官渡之战','巨鹿之战'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'淝水之战中前秦的君主是？',b:'',opts:['苻坚','苻健','慕容垂','姚苌'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'北魏孝文帝改革，将都城由平城迁到？',b:'',opts:['洛阳','长安','邺城','平城'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'北魏孝文帝改革中促进民族交融的措施是？',b:'',opts:['说汉话、穿汉服、改汉姓','推行分封','奖励军功','重农抑商'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'把圆周率精确到小数点后第七位的南朝数学家是？',b:'',opts:['祖冲之','刘徽','张衡','华佗'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'我国现存最早的一部完整的农书《齐民要术》的作者是？',b:'',opts:['贾思勰','祖冲之','郦道元','王羲之'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'被后人誉为“书圣”、代表作《兰亭集序》的是？',b:'',opts:['王羲之','王献之','颜真卿','柳公权'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'南北朝时期雕刻艺术的杰出代表是？',b:'',opts:['云冈石窟和龙门石窟','秦兵马俑','敦煌莫高窟','大足石刻'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'东汉末年写成《伤寒杂病论》的“医圣”是？',b:'',opts:['张仲景','华佗','扁鹊','李时珍'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'赤壁之战中，孙刘联军以少胜多打败的对手是？',b:'',opts:['曹操','袁绍','苻坚','司马懿'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'最终结束三国分裂、短暂统一全国的是？',b:'',opts:['西晋','曹魏','蜀汉','东吴'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'西晋灭亡后，司马睿在南方重建的晋朝史称？',b:'',opts:['东晋','西汉','西晋','后晋'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'北魏是由下列哪一少数民族建立的政权？',b:'',opts:['鲜卑族','匈奴','羯族','羌族'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'北魏孝文帝改革的根本目的是？',b:'',opts:['加强对中原统治、促进封建化','返回草原游牧','削弱汉族','废除农业'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'江南地区在魏晋南北朝时期得到开发的主要原因是？',b:'',opts:['北方人南迁带来劳动力和先进技术','政府强制移民','气候突变','战乱主要在南方'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'祖冲之除了把圆周率精确到小数点后第七位，还编制了先进历法？',b:'',opts:['《大明历》','《太初历》','《授时历》','《皇极历》'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'郦道元编写的综合性地理学著作是？',b:'',opts:['《水经注》','《齐民要术》','《禹贡》','《山海经》'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'东晋画家顾恺之的代表作是？',b:'',opts:['《女史箴图》','《清明上河图》','《步辇图》','《富春山居图》'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'蜀汉丞相诸葛亮治理蜀汉时，下列做法不符合史实的是？',b:'',opts:['在洛阳称帝','发展农业生产','改善民族关系','严明赏罚'],a:0},
+  {u:'第四单元 三国两晋南北朝',part:'',q:'三国两晋南北朝时期，曾统一过北方地区的政权有？',b:'',opts:['曹魏、西晋、北魏','南宋、南陈','东吴、蜀汉','吐蕃、回纥'],a:0},
+];
+
+/* ===================== 状态 ===================== */
+const answers={};
+let Q=[];
+let currentName='', lastCount=20, lastAI=false, lastScopeText='全学期';
+let mode='local';
+const selectedUnits=new Set(UNITS.map(u=>u.full));
+
+/* ===================== 工具 ===================== */
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1500);}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+/* 打乱单题选项，使正确项下标随机分布（题库里 a 多固定为 0，必须重排） */
+function shuffleOptions(q){
+  const idx=[0,1,2,3];
+  for(let i=idx.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
+  return Object.assign({},q,{opts:idx.map(k=>q.opts[k]),a:idx.indexOf(q.a)});
+}
+function $(id){return document.getElementById(id);}
+
+/* ===================== 开始页渲染 ===================== */
+function renderUnits(){
+  const box=$('units');
+  let html='<span class="uchip all on" id="uAll" onclick="toggleAll()">📚 全学期</span>';
+  html+=UNITS.map(u=>`<span class="uchip on" data-k="${u.full}" onclick="toggleUnit('${u.full}')">${u.label}</span>`).join('');
+  box.innerHTML=html;
+}
+function toggleAll(){
+  UNITS.forEach(u=>selectedUnits.add(u.full));
+  document.querySelectorAll('#units .uchip').forEach(c=>c.classList.add('on'));
+}
+function toggleUnit(full){
+  // 点具体单元时，取消“全学期”高亮，转为自选
+  $('uAll').classList.remove('on');
+  if(selectedUnits.has(full)){selectedUnits.delete(full);}
+  else{selectedUnits.add(full);}
+  const chip=document.querySelector(`#units .uchip[data-k="${CSS.escape(full)}"]`);
+  if(chip)chip.classList.toggle('on',selectedUnits.has(full));
+}
+function setMode(m){
+  mode=m;
+  $('mLocal').classList.toggle('on',m==='local');
+  $('mAI').classList.toggle('on',m==='ai');
+  $('aiNote').classList.toggle('hide',m!=='ai');
+}
+renderUnits();
+setMode('local');
+
+/* ===================== 开始测试 ===================== */
+function startTest(){
+  const name=($('stuName').value||'').trim();
+  if(!name){toast('请输入姓名以便记录成绩');$('stuName').focus();return;}
+  if(selectedUnits.size===0){toast('请至少选择一个单元');return;}
+  let count=parseInt($('qCount').value)||20;
+  count=Math.max(5,Math.min(60,count));
+  currentName=name; lastCount=count; lastAI=(mode==='ai');
+  lastScopeText = selectedUnits.size===UNITS.length ? '全学期' : [...selectedUnits].sort().join('、');
+
+  if(mode==='ai'){ generateAI(count); }
+  else { buildLocal(count); }
+}
+
+/* 本地随机抽题（按比例分布到所选单元） */
+function buildLocal(count){
+  const sel=[...selectedUnits];
+  const byUnit={};
+  sel.forEach(u=>byUnit[u]=shuffle(BANK.filter(x=>x.u===u)));
+  let per=Math.max(1,Math.floor(count/sel.length));
+  let picked=[];
+  sel.forEach(u=>{ picked=picked.concat(byUnit[u].slice(0,per)); });
+  // 补足
+  let rest=count-picked.length;
+  if(rest>0){
+    let pool=[];
+    sel.forEach(u=>{ const used=new Set(picked.filter(x=>x.u===u)); byUnit[u].forEach(x=>{if(!used.has(x))pool.push(x);}); });
+    pool=shuffle(pool);
+    picked=picked.concat(pool.slice(0,rest));
+  }
+  picked=shuffle(picked).slice(0,count);
+  beginQuiz(picked,'本地随机');
+}
+
+/* AI 重新出题（消耗 API） */
+async function generateAI(count){
+  const KEY=($('apiKey').value||'').trim() || localStorage.getItem('htest_key') || localStorage.getItem('ds_key') || '';
+  if(KEY) localStorage.setItem('htest_key',KEY);
+  if(!KEY){
+    toast('未设置 API Key，已改用本地题库随机出题');
+    buildLocal(count); return;
+  }
+  showQuizLoading('🤖 AI 正在按所选单元重新出题，请稍候…');
+  const unitsText=[...selectedUnits].sort().join('、');
+  const prompt=`你是一位七年级上册历史（部编版）出题老师。请根据七年级上册中国历史范围（史前时期、夏商周、秦汉、三国两晋南北朝），为以下单元出 ${count} 道四选一选择题，用于学生水平诊断。
+要求：
+1. 单元范围（u 只能取以下之一）：${unitsText}
+2. 题型混合：史实识记、时间排序、因果判断、材料辨析、文物与地图识别 都可有，难度为七年级上学期。
+3. 每题返回 JSON 对象，字段严格为：
+   - u：单元名（必须是上面给定的单元之一）
+   - q：题干（可含换行，用 \\n 表示）
+   - b：题干前置背景/短文，没有则空字符串 ""
+   - opts：长度为 4 的字符串数组（选项）
+   - a：正确答案下标（0-3 的整数）
+   - exp：中文解析（一句话说明考点）
+4. 只输出一个 JSON 数组，不要任何解释文字，不要使用 markdown 代码块标记。
+5. 共 ${count} 题，务必凑足数量。`;
+  try{
+    const resp=await fetch('https://api.deepseek.com/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY},
+      body:JSON.stringify({model:'deepseek-chat',messages:[{role:'system',content:'你是严谨的七年级历史老师，只输出符合要求的 JSON。'},{role:'user',content:prompt}],temperature:0.9,max_tokens:3500})
+    });
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const d=await resp.json();
+    const content=d.choices?.[0]?.message?.content||'';
+    const qs=parseAI(content);
+    if(qs.length<3) throw new Error('生成题目过少');
+    beginQuiz(qs,'AI 出题');
+  }catch(e){
+    console.error(e);
+    toast('AI 出题失败（'+e.message+'），已改用本地题库随机出题');
+    buildLocal(count);
+  }
+}
+function parseAI(text){
+  let t=(text||'').trim().replace(/```json/gi,'').replace(/```/g,'').trim();
+  // 截取第一个 [ 到最后一个 ]
+  const s=t.indexOf('['), e=t.lastIndexOf(']');
+  if(s>=0&&e>t) t=t.slice(s,e+1);
+  let arr;
+  try{ arr=JSON.parse(t); }catch(_){ return []; }
+  if(!Array.isArray(arr)) return [];
+  return arr.filter(x=>{
+    if(!x||!Array.isArray(x.opts)||x.opts.length!==4||!x.q) return false;
+    const ai=Number(x.a);
+    return Number.isInteger(ai)&&ai>=0&&ai<4;
+  }).map(x=>({u:(UNIT_FULL.has(x.u)?x.u:'Unit 1'),q:String(x.q),b:String(x.b||''),opts:x.opts.map(String),a:Number(x.a),exp:String(x.exp||''),part:''}));
+}
+
+/* ===================== 渲染答题 ===================== */
+function showQuizLoading(msg){
+  $('startScreen').classList.add('hide');
+  $('resultScreen').classList.add('hide');
+  $('quizScreen').classList.remove('hide');
+  $('submitBtn').classList.add('hide');
+  $('retryBtn').classList.add('hide');
+  $('quiz').innerHTML='<div class="loading">'+msg+'</div>';
+  window.scrollTo(0,0);
+}
+function beginQuiz(questions,srcLabel){
+  Q=questions.map(shuffleOptions);
+  for(const k in answers) delete answers[k];
+  const quizEl=$('quiz');
+  quizEl.innerHTML='';
+  Q.forEach((it,i)=>{
+    const qid='q'+i;
+    const optsHtml=it.opts.map((o,ki)=>
+      `<button class="opt" id="o-${qid}-${ki}" onclick="pick('${qid}',${ki})"><span class="k">${String.fromCharCode(65+ki)}.</span>${esc(o)}</button>`
+    ).join('');
+    const div=document.createElement('div');
+    div.className='q';
+    div.innerHTML=`<div class="q-h">第 ${i+1} 题<span class="tag">${esc(it.u)}</span></div>`+
+      (it.b?`<div class="q-b">${esc(it.b)}</div>`:'')+
+      `<div class="q-b">${esc(it.q)}</div>`+
+      optsHtml+
+      `<div class="exp" id="exp-${qid}">${it.exp?('💡 '+esc(it.exp)):''}</div>`;
+    quizEl.appendChild(div);
+  });
+  $('quizInfo').textContent=`考生：${currentName}（${($('stuClass').value||'').trim()||'—'}） ｜ 范围：${lastScopeText} ｜ 共 ${questions.length} 题 ｜ 来源：${srcLabel}`;
+  $('startScreen').classList.add('hide');
+  $('resultScreen').classList.add('hide');
+  $('quizScreen').classList.remove('hide');
+  $('submitBtn').classList.remove('hide');
+  $('retryBtn').classList.add('hide');
+  window.scrollTo(0,0);
+}
+function pick(qid,ki){
+  answers[qid]=ki;
+  for(let k=0;k<10;k++){
+    const el=document.getElementById('o-'+qid+'-'+k);
+    if(el) el.classList.toggle('sel',k===ki);
+  }
+}
+
+/* ===================== 判分 ===================== */
+function grade(){
+  if(Q.length===0) return;
+  let unanswered=0,first=null;
+  for(let i=0;i<Q.length;i++){const qid='q'+i;if(answers[qid]===undefined){unanswered++;if(!first)first=qid;}}
+  if(unanswered>0){
+    toast('还有 '+unanswered+' 题没答，请完成全部 '+Q.length+' 题');
+    if(first){const el=document.getElementById('o-'+first+'-0');if(el)el.closest('.q').scrollIntoView({behavior:'smooth',block:'center'});}
+    return;
+  }
+  let correct=0;const wrongUnits={},unitTotal={};
+  for(let i=0;i<Q.length;i++){
+    const qid='q'+i;const it=Q[i];
+    unitTotal[it.u]=(unitTotal[it.u]||0)+1;
+    const chosen=answers[qid];
+    const opts=it.opts.map((o,k)=>document.getElementById('o-'+qid+'-'+k));
+    const expEl=document.getElementById('exp-'+qid);
+    opts[it.a].classList.add('correct');
+    if(chosen===it.a){correct++;}
+    else{opts[chosen].classList.add('wrong');wrongUnits[it.u]=(wrongUnits[it.u]||0)+1;}
+    if(it.exp)expEl.classList.add('show');
+    opts.forEach(o=>o.onclick=null);
+  }
+  showResult(correct,Q.length,wrongUnits,unitTotal);
+}
+
+function showResult(correct,total,wrongUnits,unitTotal){
+  const score=Math.round(correct/total*100);
+  let level,lvlColor,comment;
+  if(score>=90){level='优秀 A';lvlColor='var(--ok)';comment='七上历史掌握扎实，各单元重要史事、人物与制度都过关，可挑战材料分析题。';}
+  else if(score>=75){level='良好 B';lvlColor='var(--brand)';comment='基本达标，个别语法点需巩固。对照解析把错题库再刷一遍即可稳住。';}
+  else if(score>=60){level='合格 C';lvlColor='var(--warn)';comment='有薄弱单元，建议按下方“薄弱项”优先复习对应单元的重点词组与语法。';}
+  else {level='待提升 D';lvlColor='var(--bad)';comment='建议从 Starter Unit 与 be 动词、三单、there be 等基础语法重新抓起，先背熟词组再练题。';}
+
+  const rows=Object.keys(unitTotal).map(u=>({
+    u,total:unitTotal[u],wrong:wrongUnits[u]||0,
+    pc:unitTotal[u]?Math.round((wrongUnits[u]||0)/unitTotal[u]*100):0
+  })).sort((a,b)=>b.pc-a.pc);
+  const weakRows=rows.map(r=>
+    `<div class="wrow"><div class="lbl">${r.u}</div><div class="wb"><i style="width:${r.pc}%"></i></div><div class="pc">${r.wrong}/${r.total}</div></div>`
+  ).join('')||'<div class="sum">🎉 全单元零失误，非常棒！</div>';
+
+  let advice='';
+  const top=rows.find(r=>r.wrong>0);
+  if(top){
+    const map={
+      'Starter Unit 1':'复习字母表、问候语（Good morning/afternoon/evening）与 be 动词 am/is/are。',
+      'Starter Unit 2':'复习颜色词与介词 in/on/under，以及 What color/What’s this 问句。',
+      'Starter Unit 3':'复习指示代词 this/that/these/those 与基数词 0-15。',
+      'Unit 1':'复习 be 动词（am/is/are）与形容词性物主代词。',
+      'Unit 2':'复习实义动词一般现在时、三单变化规则与名词所有格。',
+      'Unit 3':'复习 there be 句型（就近原则）与方位介词。',
+      'Unit 4':'复习 boring/bored、be good at/with/for、and/but/because 连词。',
+      'Unit 5':'复习情态动词 can、play 用法（球类/乐器）、speak/say/talk/tell。',
+      'Unit 6':'复习日常作息词汇、what time/when、时间表达法与频度副词。',
+      'Unit 7':'复习序数词、日期介词 on、How much 问价格与生日话题表达。'
+    };
+    advice=`<div class="adv"><b>📌 复习建议：</b>最薄弱的是 <b>${top.u}</b>（错 ${top.wrong}/${top.total}）。${map[top.u]||''}</div>`;
+  }
+
+  const res=$('result');
+  res.innerHTML=`
+    <div class="res">
+      <div style="font-size:13px;color:#475569;text-align:center">考生：${esc(currentName)}（${esc(($('stuClass').value||'').trim()||'—')}）｜ 范围：${esc(lastScopeText)}｜ ${new Date().toLocaleString('zh-CN')}</div>
+      <div class="score" style="margin-top:10px">
+        <div class="num" style="color:${lvlColor}">${score}</div>
+        <div class="level" style="background:${lvlColor}">${level}</div>
+        <div class="sum">答对 ${correct} / ${total} 题 · 满分 100</div>
+      </div>
+      <div class="bar"><i style="width:${score}%"></i></div>
+      <div class="sum">${comment}</div>
+      <div class="weak">
+        <h3>📊 各单元正确率（薄弱项排序）</h3>
+        ${weakRows}
+      </div>
+      ${advice}
+      <div class="adv" style="background:#eff6ff;border-color:#bfdbfe;color:#1e40af;margin-top:14px">✅ 本次成绩已自动记录到本机（含姓名、时间、范围、分数与各单元正确率）。可在下方或“查看历史成绩”回看。</div>
+    </div>`;
+
+  // 记录
+  saveRecord({name:currentName,cls:($('stuClass').value||'').trim(),scope:lastScopeText,score,total,correct,
+    dt:new Date().toISOString(),dtDisplay:new Date().toLocaleString('zh-CN'),
+    breakdown:rows.map(r=>({u:r.u,total:r.total,wrong:r.wrong}))});
+
+  $('quizScreen').classList.add('hide');
+  $('resultScreen').classList.remove('hide');
+  renderHistory($('histList'));
+  $('resultScreen').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ===================== 成绩记录 ===================== */
+function saveRecord(rec){
+  let h=[];
+  try{h=JSON.parse(localStorage.getItem('htest_history')||'[]');}catch(_){}
+  h.unshift(rec);
+  if(h.length>50)h=h.slice(0,50);
+  localStorage.setItem('htest_history',JSON.stringify(h));
+}
+function renderHistory(container){
+  let h=[];
+  try{h=JSON.parse(localStorage.getItem('htest_history')||'[]');}catch(_){}
+  if(!h.length){container.innerHTML='<div class="sum">暂无记录，做完一套测试就会显示在这里。</div>';return;}
+  const rows=h.map(r=>`<div class="hrow"><span class="hn">${esc(r.name)}</span><span class="hd">${esc(r.scope)}</span><span class="hs">${r.score}分</span><span class="ht">${esc(r.dtDisplay)}</span></div>`).join('');
+  // 走势（最近 8 次）
+  const recent=h.slice(0,8).reverse();
+  const trend=recent.map(r=>`<div class="tb" style="height:${Math.max(6,r.score*0.55)}px" title="${r.score}"><span>${r.score}</span></div>`).join('');
+  container.innerHTML=`<div class="trend">${trend}</div><div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:8px">最近 ${recent.length} 次得分走势</div>`+rows;
+}
+function openHistory(){
+  renderHistory($('histModalList'));
+  $('histMask').classList.add('show');
+}
+function closeHistory(){$('histMask').classList.remove('show');}
+function clearHistory(){
+  if(confirm('确定清空全部历史成绩记录？此操作不可恢复。')){
+    localStorage.removeItem('htest_history');
+    renderHistory($('histModalList'));renderHistory($('histList'));
+    toast('已清空历史记录');
+  }
+}
+$('histMask').addEventListener('click',e=>{if(e.target.id==='histMask')closeHistory();});
+
+/* ===================== 导航 ===================== */
+function backHome(){
+  $('quizScreen').classList.add('hide');
+  $('resultScreen').classList.add('hide');
+  $('startScreen').classList.remove('hide');
+  window.scrollTo(0,0);
+}
+function redoSame(){
+  if(lastAI){ generateAI(lastCount); }
+  else { buildLocal(lastCount); }
+}
+</script>
+</body>
+</html>

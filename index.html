@@ -123,14 +123,15 @@
   #stest-bar .stest-t{font-size:14px;font-weight:700;opacity:.95}
   #stest-frame iframe{flex:1;width:100%;border:none;background:#f5f7fb}
   /* ===== 语文/数学水平测试 全屏浮层 ===== */
-  #ctest-frame,#mtest-frame{position:fixed;inset:0;z-index:70;background:#fff;display:none;flex-direction:column}
-  #ctest-frame.show,#mtest-frame.show{display:flex}
-  #ctest-bar,#mtest-bar{flex:none;height:48px;display:flex;align-items:center;color:#fff;box-shadow:0 2px 8px rgba(15,23,42,.12)}
+  #ctest-frame,#mtest-frame,#htest-frame{position:fixed;inset:0;z-index:70;background:#fff;display:none;flex-direction:column}
+  #ctest-frame.show,#mtest-frame.show,#htest-frame.show{display:flex}
+  #ctest-bar,#mtest-bar,#htest-bar{flex:none;height:48px;display:flex;align-items:center;color:#fff;box-shadow:0 2px 8px rgba(15,23,42,.12)}
   #ctest-bar{background:linear-gradient(135deg,#ea580c,#f97316)}
   #mtest-bar{background:linear-gradient(135deg,#4f46e5,#6366f1)}
-  #ctest-bar .ctest-back,#mtest-bar .mtest-back{background:none;border:none;color:#fff;font-size:15px;font-weight:700;padding:0 14px;cursor:pointer;height:100%}
-  #ctest-bar .ctest-t,#mtest-bar .mtest-t{font-size:14px;font-weight:700;opacity:.95}
-  #ctest-frame iframe,#mtest-frame iframe{flex:1;width:100%;border:none;background:#f5f7fb}
+  #htest-bar{background:linear-gradient(135deg,#b45309,#d97706)}
+  #ctest-bar .ctest-back,#mtest-bar .mtest-back,#htest-bar .htest-back{background:none;border:none;color:#fff;font-size:15px;font-weight:700;padding:0 14px;cursor:pointer;height:100%}
+  #ctest-bar .ctest-t,#mtest-bar .mtest-t,#htest-bar .htest-t{font-size:14px;font-weight:700;opacity:.95}
+  #ctest-frame iframe,#mtest-frame iframe,#htest-frame iframe{flex:1;width:100%;border:none;background:#f5f7fb}
 </style>
 </head>
 <body>
@@ -184,6 +185,12 @@
   <p class="sec-t">③ 数学专属 · 水平诊断</p>
   <button class="btn" style="width:100%;background:linear-gradient(135deg,#4f46e5,#6366f1)" onclick="openMtest()">🔢 七上数学水平测试（诊断 + 评分）</button>
   <p class="addtip">数学测试：可选章节 / 全册，本地随机或 AI 出题，自动判分并记录成绩。</p>
+</div>
+
+<div class="sec" id="history-sec" style="display:none">
+  <p class="sec-t">③ 历史专属 · 水平诊断</p>
+  <button class="btn" style="width:100%;background:linear-gradient(135deg,#b45309,#d97706)" onclick="openHtest()">📜 七上历史水平测试（诊断 + 评分）</button>
+  <p class="addtip">历史测试：可选单元 / 全册，本地随机或 AI 出题，自动判分并记录成绩。</p>
 </div>
 
 <div class="sec">
@@ -349,6 +356,15 @@
   <iframe id="mtest-iframe" src="about:blank" title="七上数学水平测试"></iframe>
 </div>
 
+<!-- 历史水平测试 全屏浮层 -->
+<div id="htest-frame">
+  <div id="htest-bar">
+    <button class="htest-back" onclick="closeHtest()">← 返回</button>
+    <span class="htest-t">七上历史 · 水平诊断测试</span>
+  </div>
+  <iframe id="htest-iframe" src="about:blank" title="七上历史水平测试"></iframe>
+</div>
+
 <div class="toast" id="toast">已复制 ✓</div>
 
 <script>
@@ -368,7 +384,7 @@ const TASKS = [
 let curSub='math', curTask=null, curData={};
 // ===== 清空本地数据（URL ?clear=1 自动触发；按钮调用 clearLocal；保留 ds_key/ds_model）=====
 function clearLocal(){
-  ['materials','admin_materials','mat_cloud','admin_cloud','etest_history','etest_key','ctest_history','ctest_key','mtest_history','mtest_key'].forEach(k=>localStorage.removeItem(k));
+  ['materials','admin_materials','mat_cloud','admin_cloud','etest_history','etest_key','ctest_history','ctest_key','mtest_history','mtest_key','htest_history','htest_key'].forEach(k=>localStorage.removeItem(k));
   if(typeof showToast==='function') showToast('本地数据已清空');
   setTimeout(()=>{ const u=location.pathname+(location.search||'').replace(/[?&]clear=1/,''); location.href=u; }, 600);
 }
@@ -446,7 +462,8 @@ Object.entries(SUBJECTS).forEach(([k,v])=>{
     document.getElementById('poem-sec').style.display=(k==='chinese')?'block':'none';
     document.getElementById('science-sec').style.display=(k==='science')?'block':'none';
     document.getElementById('chinese-sec').style.display=(k==='chinese')?'block':'none';
-    document.getElementById('math-sec').style.display=(k==='math')?'block':'none';};
+    document.getElementById('math-sec').style.display=(k==='math')?'block':'none';
+    document.getElementById('history-sec').style.display=(k==='history')?'block':'none';};
   subsEl.appendChild(d);
 });
 // render tasks
@@ -1113,6 +1130,20 @@ function openMtest(){
 }
 function closeMtest(){
   document.getElementById('mtest-frame').classList.remove('show');
+  document.body.style.overflow='';
+}
+// ===== 入口：历史水平测试（全屏内嵌，与主 App 同域名共享 Key/历史）=====
+// HTEST_VER 每次升级测试页都需 +1，强制 iframe 重新拉取，绕过 iOS 主屏幕等顽固缓存
+const HTEST_VER='20260802a';
+function openHtest(){
+  const f=document.getElementById('htest-frame');
+  const ifr=document.getElementById('htest-iframe');
+  ifr.src='history-test.html?v='+HTEST_VER;
+  f.classList.add('show');
+  document.body.style.overflow='hidden';
+}
+function closeHtest(){
+  document.getElementById('htest-frame').classList.remove('show');
   document.body.style.overflow='';
 }
 </script>
